@@ -1,0 +1,39 @@
+# Vetra Root .gitignore
+
+# Backend
+backend/target/
+backend/.mvn/
+*.class
+*.jar
+*.war
+
+# Frontend
+frontend/dist/
+frontend/node_modules/
+frontend/.env
+frontend/.env.local
+frontend/.env.production
+
+# Environment files (root level)
+.env
+.env.local
+.env.production
+.env.*.local
+
+# IDE / Editor
+.idea/
+.vscode/settings.json
+*.iml
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Logs
+*.log
+logs/
+
+# Docker
+*.pid
