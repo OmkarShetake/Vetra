@@ -17,22 +17,22 @@ public class AssessmentQuestion {
     @JoinColumn(name = "assessment_id", nullable = false)
     private Assessment assessment;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(name = "question_text", nullable = false, columnDefinition = "TEXT")
     private String questionText;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(name = "option_a", nullable = false, columnDefinition = "TEXT")
     private String optionA;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(name = "option_b", nullable = false, columnDefinition = "TEXT")
     private String optionB;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(name = "option_c", nullable = false, columnDefinition = "TEXT")
     private String optionC;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(name = "option_d", nullable = false, columnDefinition = "TEXT")
     private String optionD;
 
-    @Column(nullable = false, length = 1)
+    @Column(name = "correct_option", nullable = false, length = 1)
     private String correctOption; // A, B, C, D
 
     @Column(columnDefinition = "TEXT")
