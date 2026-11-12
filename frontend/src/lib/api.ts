@@ -1,6 +1,6 @@
 import type { ApiErrorResponse } from '@/types'
 
-const API_BASE_URL = '/api/v1'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1'
 
 class ApiClient {
   private getToken(): string | null {

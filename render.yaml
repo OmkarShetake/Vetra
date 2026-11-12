@@ -1,0 +1,33 @@
+services:
+  # Backend - Spring Boot API
+  - type: web
+    name: vetra-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: vetra-db
+          property: connectionString
+      - key: SPRING_DATASOURCE_USERNAME
+        fromDatabase:
+          name: vetra-db
+          property: user
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromDatabase:
+          name: vetra-db
+          property: password
+      - key: GEMINI_API_KEY
+        sync: false   # set manually in Render dashboard
+      - key: JWT_SECRET
+        generateValue: true
+    healthCheckPath: /actuator/health
+
+databases:
+  - name: vetra-db
+    databaseName: vetra
+    user: vetra
+    plan: free

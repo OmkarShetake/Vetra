@@ -27,6 +27,15 @@ springdoc:
     tags-sorter: alpha
     operations-sorter: method
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+
 ---
 # Local Profile: Persistent File-Based H2 (data survives backend restarts)
 spring:
