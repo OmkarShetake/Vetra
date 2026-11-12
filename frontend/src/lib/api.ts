@@ -1,6 +1,20 @@
 import type { ApiErrorResponse } from '@/types'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api/v1'
+function getBaseUrl(): string {
+  const envUrl = (import.meta.env.VITE_API_BASE_URL || '/api/v1').trim()
+  const stripped = envUrl.replace(/\/+$/, '')
+  if (!stripped.includes('/api')) {
+    return `${stripped}/api/v1`
+  }
+  return stripped
+}
+
+const API_BASE_URL = getBaseUrl()
+
+function resolveUrl(endpoint: string): string {
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`
+  return `${API_BASE_URL}${cleanEndpoint}`
+}
 
 class ApiClient {
   private getToken(): string | null {
@@ -21,7 +35,7 @@ class ApiClient {
       headers['Authorization'] = `Bearer ${token}`
     }
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await fetch(resolveUrl(endpoint), {
       ...options,
       headers,
     })
@@ -70,7 +84,7 @@ class ApiClient {
     const headers: Record<string, string> = {}
     if (token) headers['Authorization'] = `Bearer ${token}`
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    const response = await fetch(resolveUrl(endpoint), {
       method: 'POST',
       headers,
       body: formData,
