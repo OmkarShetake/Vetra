@@ -697,9 +697,95 @@ export function ResumeStudioPage() {
 
         {/* TAB 5: Bullet Point Optimizer */}
         <TabsContent value="bulletPoints" className="space-y-4">
-          <Card className="border-border p-4 bg-indigo/5 border-indigo/20">
+          {/* Live Interactive Gemini AI Rewriter Card */}
+          <Card className="border-border p-5 space-y-4 bg-card shadow-sm">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400">
+                  <Sparkles className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">Live Gemini AI Bullet Enhancer</h3>
+                  <p className="text-xs text-muted-foreground">Type any weak or passive bullet from your resume to generate impact-driven alternatives.</p>
+                </div>
+              </div>
+              <Badge variant="teal" className="hidden sm:inline-flex gap-1">
+                <Sparkles className="h-3 w-3" />
+                Gemini 2.5 Flash
+              </Badge>
+            </div>
+
+            <div className="space-y-2">
+              <Textarea
+                placeholder="e.g. Worked on Spring Boot backend for e-commerce website and created REST APIs..."
+                value={customBullet}
+                onChange={(e) => setCustomBullet(e.target.value)}
+                rows={2}
+                className="bg-card text-sm"
+              />
+              <div className="flex justify-end">
+                <Button
+                  variant="gradient"
+                  size="sm"
+                  disabled={aiRewriting || !customBullet.trim()}
+                  onClick={handleAiRewrite}
+                  className="gap-1.5"
+                >
+                  {aiRewriting ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Rewriting with Gemini...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Rewrite with Gemini AI
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {aiResult && (
+              <div className="rounded-xl border border-border bg-muted/40 p-4 space-y-3 animate-fade-in">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                    <CheckCircle2 className="h-4 w-4 text-teal" />
+                    AI-Enhanced Alternatives
+                  </p>
+                  <span className="text-[11px] text-muted-foreground">Ready to copy into your resume</span>
+                </div>
+
+                <div className="space-y-2">
+                  {aiResult.options.map((opt, optIndex) => (
+                    <div key={optIndex} className="rounded-lg border border-teal/30 bg-teal/5 p-3 text-xs font-medium text-foreground leading-relaxed flex items-start justify-between gap-3">
+                      <span>• {opt}</span>
+                      <Button
+                        variant="ghost"
+                        size="iconSm"
+                        className="h-6 w-6 shrink-0 text-muted-foreground hover:text-teal"
+                        onClick={() => {
+                          navigator.clipboard.writeText(opt);
+                          toast.success('Copied to clipboard!');
+                        }}
+                        title="Copy to clipboard"
+                      >
+                        <Check className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+
+                <p className="text-[11px] text-muted-foreground italic">
+                  💡 {aiResult.explanation}
+                </p>
+              </div>
+            )}
+          </Card>
+
+          <Card className="border-border p-4 bg-muted/30">
             <div className="flex items-start gap-3">
-              <Sparkles className="h-5 w-5 text-indigo shrink-0 mt-0.5" />
+              <Sparkles className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm font-semibold text-foreground">Rule of Thumb: Action + Architecture + Outcome</p>
                 <p className="text-xs text-muted-foreground mt-0.5">

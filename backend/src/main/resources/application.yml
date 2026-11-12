@@ -28,13 +28,13 @@ springdoc:
     operations-sorter: method
 
 ---
-# Local Profile: In-Memory H2 for Instant Out-of-the-Box Execution
+# Local Profile: Persistent File-Based H2 (data survives backend restarts)
 spring:
   config:
     activate:
       on-profile: local
   datasource:
-    url: jdbc:h2:mem:vetradb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL
+    url: jdbc:h2:file:./data/vetradb;AUTO_SERVER=TRUE;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
     driverClassName: org.h2.Driver
     username: sa
     password: 

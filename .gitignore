@@ -3,6 +3,9 @@
 # Backend
 backend/target/
 backend/.mvn/
+backend/data/
+*.mv.db
+*.trace.db
 *.class
 *.jar
 *.war
