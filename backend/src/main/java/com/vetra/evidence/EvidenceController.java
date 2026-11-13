@@ -35,4 +35,21 @@ public class EvidenceController {
             @AuthenticationPrincipal User user) {
         return ResponseEntity.ok(ApiResponse.ok("Evidence added", evidenceService.addEvidence(req, user)));
     }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete an evidence item")
+    public ResponseEntity<ApiResponse<Void>> deleteEvidence(
+            @PathVariable String id,
+            @AuthenticationPrincipal User user) {
+        evidenceService.deleteEvidence(id, user);
+        return ResponseEntity.ok(ApiResponse.ok("Evidence deleted", null));
+    }
+
+    @PatchMapping("/{id}/toggle-verify")
+    @Operation(summary = "Toggle verification status of evidence")
+    public ResponseEntity<ApiResponse<EvidenceDtos.EvidenceResponse>> toggleVerify(
+            @PathVariable String id,
+            @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(ApiResponse.ok("Verification updated", evidenceService.toggleVerify(id, user)));
+    }
 }

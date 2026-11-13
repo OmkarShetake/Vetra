@@ -38,7 +38,7 @@ public class ProfileService {
         return ProfileDtos.ProfileResponse.from(profile);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public ProfileDtos.ProfileResponse getProfile(User user) {
         UserProfile profile = profileRepository.findByUserId(user.getId())
             .orElseGet(() -> profileRepository.save(new UserProfile(user)));
@@ -50,6 +50,7 @@ public class ProfileService {
         UserProfile profile = profileRepository.findByUserId(user.getId())
             .orElseGet(() -> new UserProfile(user));
 
+        if (req.fullName() != null && !req.fullName().isBlank()) user.setFullName(req.fullName());
         if (req.targetRole() != null) user.setTargetRole(req.targetRole());
         if (req.experienceLevel() != null) user.setExperienceLevel(req.experienceLevel());
         userRepository.save(user);

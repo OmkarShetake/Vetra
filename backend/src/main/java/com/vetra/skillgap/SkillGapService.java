@@ -1,5 +1,7 @@
 package com.vetra.skillgap;
 
+import com.vetra.evidence.EvidenceItem;
+import com.vetra.evidence.EvidenceRepository;
 import com.vetra.identity.User;
 import org.springframework.stereotype.Service;
 
@@ -7,6 +9,12 @@ import java.util.*;
 
 @Service
 public class SkillGapService {
+
+    private final EvidenceRepository evidenceRepository;
+
+    public SkillGapService(EvidenceRepository evidenceRepository) {
+        this.evidenceRepository = evidenceRepository;
+    }
 
     private static final Map<String, List<RoleRequirement>> ROLE_TAXONOMY = Map.of(
         "Java Backend Developer", List.of(
@@ -51,9 +59,32 @@ public class SkillGapService {
 
         List<RoleRequirement> requirements = ROLE_TAXONOMY.getOrDefault(role, ROLE_TAXONOMY.get("Java Backend Developer"));
 
-        // User evidence set
-        Set<String> verifiedSkills = Set.of("Java", "OOP", "SQL", "Git", "REST APIs", "PostgreSQL");
-        Set<String> partialSkills = Set.of("Spring Boot", "Testing");
+        // Build dynamic user evidence set from database
+        Set<String> verifiedSkills = new HashSet<>();
+        Set<String> partialSkills = new HashSet<>();
+        Map<String, Integer> evidenceCountMap = new HashMap<>();
+
+        if (user != null) {
+            List<EvidenceItem> userEvidence = evidenceRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
+            for (EvidenceItem item : userEvidence) {
+                if (item.getLinkedSkills() != null) {
+                    for (String s : item.getLinkedSkills()) {
+                        evidenceCountMap.put(s, evidenceCountMap.getOrDefault(s, 0) + 1);
+                        if (item.isVerified()) {
+                            verifiedSkills.add(s);
+                        } else {
+                            partialSkills.add(s);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Default baseline if user has no items yet
+        if (verifiedSkills.isEmpty() && partialSkills.isEmpty()) {
+            verifiedSkills.addAll(Set.of("Java", "OOP", "SQL", "Git"));
+            partialSkills.addAll(Set.of("REST APIs"));
+        }
 
         List<SkillGapDtos.SkillGapItem> items = new ArrayList<>();
         int demonstrated = 0;
@@ -65,6 +96,7 @@ public class SkillGapService {
         for (RoleRequirement reqItem : requirements) {
             int weight = reqItem.importance.equals("CRITICAL") ? 3 : reqItem.importance.equals("IMPORTANT") ? 2 : 1;
             totalWeight += weight;
+            int count = evidenceCountMap.getOrDefault(reqItem.name, verifiedSkills.contains(reqItem.name) ? 2 : partialSkills.contains(reqItem.name) ? 1 : 0);
 
             if (verifiedSkills.contains(reqItem.name)) {
                 demonstrated++;
@@ -73,8 +105,8 @@ public class SkillGapService {
                     reqItem.name,
                     "DEMONSTRATED",
                     reqItem.importance,
-                    2,
-                    "Project and repository evidence submitted",
+                    count,
+                    "Verified project or repository evidence in portfolio",
                     reqItem.reason,
                     reqItem.prerequisites
                 ));
@@ -85,9 +117,9 @@ public class SkillGapService {
                     reqItem.name,
                     "PARTIALLY_DEMONSTRATED",
                     reqItem.importance,
-                    1,
-                    "Basic coursework or preliminary assessment completed",
-                    reqItem.name + " is partially demonstrated. Build a full-stack project or take an assessment to verify proficiency.",
+                    count,
+                    "Unverified project or coursework claim",
+                    reqItem.name + " is partially demonstrated. Build a production project or pass an assessment to verify proficiency.",
                     reqItem.prerequisites
                 ));
             } else {

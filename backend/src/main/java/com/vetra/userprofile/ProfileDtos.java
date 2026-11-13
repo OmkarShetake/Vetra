@@ -16,6 +16,7 @@ public class ProfileDtos {
     ) {}
 
     public record UpdateProfileRequest(
+        String fullName,
         String education,
         String graduationYear,
         String experienceLevel,

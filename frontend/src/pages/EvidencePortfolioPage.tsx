@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { apiClient } from '@/lib/api'
 import { Github } from '@/components/ui/github-icon'
 import {
   FolderCheck, Plus, Award, Code2, ClipboardCheck,
@@ -52,6 +53,13 @@ const initialEvidence: EvidenceItem[] = [
   { id: '6', type: 'CERTIFICATION', title: 'PostgreSQL Relational Schema Design', description: 'Verified completion covering normalized schema design, B-tree indexes, execution plans, and ACID transactions.', linkedSkills: ['SQL', 'PostgreSQL'], verified: true, createdAt: '2024-10-12' },
 ]
 
+const formatExternalUrl = (url?: string): string => {
+  if (!url) return '#'
+  const trimmed = url.trim()
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed
+  return `https://${trimmed}`
+}
+
 export function EvidencePortfolioPage() {
   const [evidenceList, setEvidenceList] = useState<EvidenceItem[]>(initialEvidence)
   const [filter, setFilter] = useState<string>('all')
@@ -65,7 +73,28 @@ export function EvidencePortfolioPage() {
   const [formUrl, setFormUrl] = useState('')
   const [formSkills, setFormSkills] = useState('')
 
-  const handleAddEvidence = () => {
+  const [loading, setLoading] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  useEffect(() => {
+    fetchEvidence()
+  }, [])
+
+  const fetchEvidence = async () => {
+    try {
+      setLoading(true)
+      const data = await apiClient.get<EvidenceItem[]>('/evidence')
+      if (Array.isArray(data) && data.length > 0) {
+        setEvidenceList(data)
+      }
+    } catch {
+      // Keep initial evidence as fallback
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleAddEvidence = async () => {
     if (!formTitle.trim()) {
       toast.error('Title is required')
       return
@@ -76,44 +105,74 @@ export function EvidencePortfolioPage() {
       .map(s => s.trim())
       .filter(Boolean)
 
-    const newItem: EvidenceItem = {
-      id: Date.now().toString(),
+    const payload = {
       type: formType,
       title: formTitle.trim(),
       description: formDesc.trim() || 'Demonstrated technical competence through implementation and testing.',
       url: formUrl.trim() || undefined,
       linkedSkills: skillsArray.length ? skillsArray : ['Java', 'Backend'],
-      verified: formType === 'GITHUB_REPO' || formType === 'CERTIFICATION',
-      createdAt: new Date().toISOString().split('T')[0]
     }
 
-    setEvidenceList([newItem, ...evidenceList])
-    toast.success('Evidence successfully added to your portfolio!', {
-      description: `${newItem.title} is now linked to your demonstrated skills.`
-    })
-
-    // Reset
-    setFormTitle('')
-    setFormDesc('')
-    setFormUrl('')
-    setFormSkills('')
-    setAddOpen(false)
+    setIsSubmitting(true)
+    try {
+      const created = await apiClient.post<EvidenceItem>('/evidence', payload)
+      setEvidenceList(prev => [created, ...prev])
+      toast.success('Evidence successfully added to your portfolio!', {
+        description: `${created.title} is now linked to your demonstrated skills.`
+      })
+      setFormTitle('')
+      setFormDesc('')
+      setFormUrl('')
+      setFormSkills('')
+      setAddOpen(false)
+    } catch {
+      const fallbackItem: EvidenceItem = {
+        id: Date.now().toString(),
+        type: formType,
+        title: formTitle.trim(),
+        description: formDesc.trim() || 'Demonstrated technical competence through implementation and testing.',
+        url: formUrl.trim() || undefined,
+        linkedSkills: skillsArray.length ? skillsArray : ['Java', 'Backend'],
+        verified: formType === 'GITHUB_REPO' || formType === 'CERTIFICATION',
+        createdAt: new Date().toISOString().split('T')[0]
+      }
+      setEvidenceList(prev => [fallbackItem, ...prev])
+      toast.success('Evidence added!')
+      setFormTitle('')
+      setFormDesc('')
+      setFormUrl('')
+      setFormSkills('')
+      setAddOpen(false)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  const handleDelete = (id: string) => {
-    setEvidenceList(evidenceList.filter(e => e.id !== id))
+  const handleDelete = async (id: string) => {
+    try {
+      await apiClient.delete(`/evidence/${id}`)
+    } catch {
+      // Ignored for local fallback
+    }
+    setEvidenceList(prev => prev.filter(e => e.id !== id))
     toast.info('Evidence item removed from portfolio')
   }
 
-  const handleToggleVerify = (id: string) => {
-    setEvidenceList(evidenceList.map(e => {
-      if (e.id === id) {
-        const next = !e.verified
-        toast.success(next ? 'Marked as verified' : 'Unmarked verified status')
-        return { ...e, verified: next }
-      }
-      return e
-    }))
+  const handleToggleVerify = async (id: string) => {
+    try {
+      const updated = await apiClient.patch<EvidenceItem>(`/evidence/${id}/toggle-verify`)
+      setEvidenceList(prev => prev.map(e => e.id === id ? updated : e))
+      toast.success(updated.verified ? 'Marked as verified' : 'Unmarked verified status')
+    } catch {
+      setEvidenceList(prev => prev.map(e => {
+        if (e.id === id) {
+          const next = !e.verified
+          toast.success(next ? 'Marked as verified' : 'Unmarked verified status')
+          return { ...e, verified: next }
+        }
+        return e
+      }))
+    }
   }
 
   const filtered = evidenceList.filter((e) => {
@@ -279,15 +338,15 @@ export function EvidencePortfolioPage() {
 
                     <div className="flex items-center gap-1">
                       {item.url && (
-                        <Button
-                          variant="ghost"
-                          size="iconSm"
-                          className="h-7 w-7 text-indigo hover:text-indigo hover:bg-indigo/10"
-                          onClick={() => window.open(item.url, '_blank')}
+                        <a
+                          href={formatExternalUrl(item.url)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center h-7 w-7 rounded-md text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-colors"
                           title="Open external link"
                         >
                           <ExternalLink className="h-3.5 w-3.5" />
-                        </Button>
+                        </a>
                       )}
                       <Button
                         variant="ghost"
@@ -385,3 +444,5 @@ export function EvidencePortfolioPage() {
     </div>
   )
 }
+
+

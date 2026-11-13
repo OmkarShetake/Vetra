@@ -1,6 +1,8 @@
 package com.vetra.evidence;
 
+import com.vetra.common.AppException;
 import com.vetra.identity.User;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,6 +39,28 @@ public class EvidenceService {
             req.linkedSkills() != null ? req.linkedSkills() : List.of(),
             isRepo // Auto-verify linked GitHub repository
         );
+        item = evidenceRepository.save(item);
+        return EvidenceDtos.EvidenceResponse.from(item);
+    }
+
+    @Transactional
+    public void deleteEvidence(String id, User user) {
+        EvidenceItem item = evidenceRepository.findById(id)
+            .orElseThrow(() -> new AppException("Evidence item not found", HttpStatus.NOT_FOUND));
+        if (!item.getUser().getId().equals(user.getId())) {
+            throw new AppException("Unauthorized to delete this evidence", HttpStatus.FORBIDDEN);
+        }
+        evidenceRepository.delete(item);
+    }
+
+    @Transactional
+    public EvidenceDtos.EvidenceResponse toggleVerify(String id, User user) {
+        EvidenceItem item = evidenceRepository.findById(id)
+            .orElseThrow(() -> new AppException("Evidence item not found", HttpStatus.NOT_FOUND));
+        if (!item.getUser().getId().equals(user.getId())) {
+            throw new AppException("Unauthorized to modify this evidence", HttpStatus.FORBIDDEN);
+        }
+        item.setVerified(!item.isVerified());
         item = evidenceRepository.save(item);
         return EvidenceDtos.EvidenceResponse.from(item);
     }
