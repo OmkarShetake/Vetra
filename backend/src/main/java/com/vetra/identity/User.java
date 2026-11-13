@@ -46,6 +46,12 @@ public class User {
         this.fullName = fullName;
     }
 
+    public User(String email, String passwordHash, String fullName, String targetRole, String experienceLevel) {
+        this(email, passwordHash, fullName);
+        this.targetRole = targetRole;
+        this.experienceLevel = experienceLevel;
+    }
+
     // Getters and Setters
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
