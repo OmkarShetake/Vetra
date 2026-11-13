@@ -1,368 +1,213 @@
 # Vetra — Evidence-Based Career Intelligence Platform
 
-> **From job requirements to proven capabilities.**
+<div align="center">
 
-Vetra helps students and early-career developers understand what companies actually require, identify their skill gaps, improve their resumes with evidence, and prove their capabilities through structured assessments and portfolios.
+> **From authentic job requirements to verified, demonstrable engineering capabilities.**
 
----
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.4-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Google Gemini](https://img.shields.io/badge/Google%20Gemini-2.5%20Flash-8E75C4?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 
-## Table of Contents
-
-- [Overview](#overview)
-- [Technology Stack](#technology-stack)
-- [Project Structure](#project-structure)
-- [Prerequisites](#prerequisites)
-- [Local Development Setup](#local-development-setup)
-  - [Frontend Only](#frontend-only-no-backend-required)
-  - [Full Stack (Frontend + Backend)](#full-stack-frontend--backend)
-  - [Docker Compose](#docker-compose)
-- [Environment Variables](#environment-variables)
-- [API Documentation](#api-documentation)
-- [Feature Status](#feature-status)
-- [Design System](#design-system)
-- [Architecture](#architecture)
+</div>
 
 ---
 
-## Overview
+## 🌟 Executive Overview
 
-Vetra is a **modular monolith** SaaS platform connecting four things:
+Early-career software engineers often struggle with a critical career disconnect: **generic roadmaps, passive resume keyword stuffing, and unverified skill claims.** 
 
-1. **Real job descriptions** and industry skill demand data
-2. A **skill graph** showing relationships and prerequisites between technologies
-3. A user's **demonstrated skills**, projects, and evidence
-4. **Resume analysis** and personalized career improvement recommendations
-
-**Target users:** CS/IT students, fresh graduates, early-career software engineers.
-
-**Initial focus roles:** Java Backend Developer, Software Engineer, Spring Boot Developer.
+**Vetra** is an end-to-end, evidence-based career intelligence platform. It bridges the gap between authentic market demand and candidate proof:
+1. **Parses & Benchmarks Real Job Postings**: Analyzes requirements across Product Base companies, High-Growth Startups, and Service Enterprises.
+2. **Universal Dynamic Skill Graphs**: Synthesizes interactive Directed Acyclic Graphs (DAGs) with topological prerequisite dependencies for any industry role (preset or user-defined).
+3. **Evidence-Grounded Skill Gap Analysis**: Calculates weighted readiness scores by validating claims against tangible code evidence, GitHub repositories, and assessments.
+4. **AI-Powered Resume Studio**: Leverages Google Gemini 2.5 Flash to transform passive resume bullets into high-impact engineering accomplishments (`Action + Architecture + Quantifiable Outcome`) without hallucinating work history.
 
 ---
 
-## Technology Stack
+## 🚀 Core Platform Capabilities
 
-| Layer | Technologies |
-|-------|-------------|
-| **Frontend** | React 18, TypeScript, Vite, Tailwind CSS v4, shadcn/ui, Lucide Icons, Recharts, React Router v6, TanStack Query, React Hook Form + Zod, Sonner (toasts) |
-| **Backend** | Java 23, Spring Boot 3.3, Spring Security, JWT (JJWT 0.12), Spring Data JPA / Hibernate |
-| **Database** | H2 (local/dev, in-memory), PostgreSQL (production) |
-| **Migrations** | Flyway (production only; H2 uses `ddl-auto: update`) |
-| **Document Parsing** | Apache PDFBox 3 |
-| **API Docs** | SpringDoc OpenAPI (Swagger UI) |
-| **Infrastructure** | Docker, Docker Compose, Nginx |
+### 1. Universal Dynamic Skill Explorer (Interactive DAG)
+- **Topological Visual Graph**: Canvas-based interactive directed acyclic graph mapping skills across 5 sequential tiers:
+  1. *Foundations & Languages*
+  2. *Core Engineering & Patterns*
+  3. *Frameworks & Persistent Storage*
+  4. *Distributed Systems & Cloud Infrastructure*
+  5. *Production Delivery & Observability*
+- **Dynamic Role Synthesizer**: Built-in support for standard industry tracks (Frontend, Java Backend, Cloud/DevOps, Full Stack, AI/ML, Data Engineer, Golang, Mobile) plus a **Universal Novel Role Synthesizer** that dynamically generates complete 5-layer dependency graphs for *any* custom role typed by a user.
+- **Node Intelligence**: Inspect prerequisites, dependent downstream skills, market demand metrics, and verifiable proof criteria with pan/zoom controls.
+
+### 2. Job Market Intelligence & Company Situations
+- **Company Archetype Classification**: Filter and analyze real-world JDs by company category:
+  - 🏢 **Product Base**: Focus on high-concurrency architecture, test automation (JUnit/Mockito/Jest), code review rigor, and API versioning.
+  - 🚀 **High-Growth Startup**: High-velocity execution, full-stack ownership, Docker containerization, and rapid feature iteration.
+  - 🌐 **Service / Global Enterprise**: Scalable design patterns, structured workflows, cross-team collaboration, and clean documentation.
+- **Situation Strategy & Salary Ranges**: Actionable strategic advice tailored to the target company's engineering culture and compensation brackets.
+- **Direct JD Import**: Paste raw job descriptions to automatically extract required vs. preferred technologies.
+
+### 3. Evidence-Grounded Skill Gap Analysis
+- **Weighted Readiness Scoring**: Replaces binary checklists with a weighted algorithm considering skill criticalities (`CRITICAL`, `IMPORTANT`, `BENEFICIAL`).
+- **Verifiable Proof Matching**: Segregates capabilities into **Demonstrated** (backed by verified code/repositories), **Partially Demonstrated** (self-declared/unverified), and **Critical Gaps** (unmet prerequisites).
+- **Explainable Strategy**: Clear, natural-language career intelligence guiding candidates on what project or assessment to tackle next.
+
+### 4. Resume Studio & Gemini AI Bullet Enhancer
+- **Multi-Format Extraction**: Parses PDF resumes using Apache PDFBox 3 to extract skills, project achievements, and experience.
+- **Live Gemini 2.5 Flash Enhancer**: Transforms weak or passive bullets into impactful engineering statements:
+  - *Weak:* "Worked on Spring Boot backend for e-commerce website and created REST APIs."
+  - *Vetra Enhanced:* "Engineered resilient Spring Boot RESTful microservices with PostgreSQL connection pooling, powering core checkout transactions and reducing API latency by 35%."
+- **ATS Compatibility Scoring**: Real-time evaluation of section health, role alignment, and formatting.
+
+### 5. Verifiable Evidence Portfolio & Technical Assessments
+- **Proof-of-Work Portfolio**: Link GitHub repositories, deployed demo URLs, and certifications directly to specific skills in your taxonomy.
+- **Skill Grounding**: Automated verification checks verifying that claims are backed by commit history and functional code.
+- **Structured Assessments**: Timed, multi-choice technical assessments with passing grade thresholds to independently certify candidate proficiency.
+
+### 6. Interactive Notification Center
+- **Real-Time Navbar Center**: Categorized notifications (`ALL`, `UNREAD`, `ACHIEVEMENTS`, `ROADMAP`) tracking evidence verifications, assessment completions, and roadmap milestones with one-click clear and mark-all-read capabilities.
 
 ---
 
-## Project Structure
+## 🛠️ Technology Stack
+
+| Layer | Technologies | Purpose |
+|-------|--------------|---------|
+| **Frontend UI** | React 18, TypeScript, Vite, Tailwind CSS v4 | Ultra-responsive SPA with clean component hierarchy |
+| **Design System** | shadcn/ui, Lucide Icons, Sonner | Modern dark/light theme design tokens |
+| **Data Visualization** | Recharts, Custom Canvas DAG Engine | Interactive radial readiness gauges and skill dependency graphs |
+| **Backend API** | Spring Boot 3.3.4, Java 21, Spring Security | Modular monolith with domain-driven boundary isolation |
+| **Database** | PostgreSQL 16 (Neon Cloud / Production), H2 (Local File Dev) | Relational persistence with transactional integrity |
+| **Migrations** | Flyway (V1 Schema, V2 Seed, V3 Multi-Track, V4 Archetypes) | Version-controlled automated database schema lifecycle |
+| **Document Processing** | Apache PDFBox 3 | Secure server-side PDF resume parsing and tokenization |
+| **Generative AI** | Google Gemini 2.5 Flash API | Low-latency, instruction-tuned resume bullet point optimization |
+| **Infrastructure** | Docker, Nginx, Render (Backend), Vercel (Frontend) | Production-grade containerization and cloud deployment |
+
+---
+
+## 📂 Project Architecture
 
 ```
 Vetra/
-├── frontend/                   # React + Vite SPA
+├── frontend/                        # React 18 + Vite SPA
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── layout/        # AppLayout, Sidebar, TopNav, ThemeProvider
-│   │   │   └── ui/            # Design system components (shadcn/ui)
-│   │   ├── hooks/             # useAuth
-│   │   ├── lib/               # api.ts, utils.ts
-│   │   ├── pages/             # All page components
-│   │   │   └── auth/          # Login, Register, ForgotPassword
-│   │   ├── styles/            # globals.css — Vetra design system
-│   │   └── types/             # TypeScript type definitions
-│   ├── public/
+│   │   │   ├── layout/             # AppLayout, Sidebar, Navbar, NotificationsCenter
+│   │   │   └── ui/                 # Accessible UI components (shadcn/ui)
+│   │   ├── lib/
+│   │   │   ├── api.ts              # Centralized typed HTTP client with JWT interceptor
+│   │   │   ├── roleTaxonomy.ts     # Preset career paths + Universal 5-Layer DAG synthesizer
+│   │   │   └── utils.ts            # Utility functions
+│   │   ├── pages/                  # Route views (Dashboard, SkillExplorer, ResumeStudio, etc.)
+│   │   └── styles/globals.css      # Midnight Navy & Indigo design tokens
 │   ├── Dockerfile
-│   ├── nginx.conf
 │   └── package.json
 │
-├── backend/                    # Spring Boot modular monolith
-│   └── src/main/java/com/vetra/
-│       ├── common/            # ApiResponse, AppException, GlobalExceptionHandler, SecurityConfig
-│       ├── identity/          # User, JWT, AuthController, AuthService
-│       ├── userprofile/       # UserProfile, ProfileController, ProfileService
-│       ├── jobintelligence/   # Job, JobController, JobService
-│       ├── skillintelligence/ # Skill, SkillGraph, SkillController
-│       ├── skillgap/          # SkillGapAnalysis, SkillGapController
-│       ├── resumeintelligence/# Resume, ResumeController, ResumeService (PDFBox)
-│       ├── evidence/          # EvidenceItem, EvidenceController
-│       ├── assessment/        # Assessment, AssessmentAttempt, AssessmentController
-│       └── learningroadmap/   # LearningPlan, LearningTask, RoadmapController
+├── backend/                         # Spring Boot 3.3 Modular Monolith
+│   ├── src/main/java/com/vetra/
+│   │   ├── common/                 # GlobalExceptionHandler, SecurityConfig, ApiResponse
+│   │   ├── identity/               # User, JWT Token Provider, AuthController
+│   │   ├── jobintelligence/        # Job entity, Archetypes, JD Parser, JobService
+│   │   ├── skillintelligence/      # Skill taxonomy, Category mappings, SkillGraph
+│   │   ├── skillgap/               # Weighted skill gap calculation engine
+│   │   ├── resumeintelligence/     # PDFBox parsing, Gemini 2.5 AI enhancer integration
+│   │   ├── evidence/               # Evidence portfolio items and skill verification
+│   │   ├── assessment/             # Assessment questions, grading, and history
+│   │   └── learningroadmap/        # Personalized phased learning plans
 │   └── src/main/resources/
-│       ├── application.yml    # Multi-profile: local (H2) | prod (PostgreSQL)
-│       └── db/migration/      # Flyway V1 (schema) + V2 (seed data)
+│       ├── application.yml         # Environment configurations (local vs. prod)
+│       └── db/migration/           # Flyway migrations (V1 to V4)
 │
-├── docker-compose.yml
+├── docker-compose.yml              # Multi-container orchestration
 └── README.md
 ```
 
 ---
 
-## Prerequisites
+## 💻 Local Quickstart
 
-| Tool | Minimum Version | Notes |
-|------|----------------|-------|
-| **Node.js** | 20+ | Tested with v24.14.1 |
-| **npm** | 10+ | Comes with Node |
-| **Java JDK** | 21+ | Tested with JDK 23 at `C:\Program Files\Java\jdk-23` |
-| **Maven** | 3.9+ | At `C:\Users\Omkar Shetake\apache-maven-3.9.11` |
-| **Docker** | 24+ | Optional — for containerized run |
-| **PostgreSQL** | 15+ | Optional — only needed for production profile |
-
----
-
-## Local Development Setup
-
-### Frontend Only (No Backend Required)
-
-The frontend runs with demo data when no backend is available. Auth routes will fail gracefully.
-
-```powershell
+### Option A: Frontend Only (No Backend Required)
+Explore the user interface immediately with embedded demo datasets:
+```bash
 cd frontend
 npm install
 npm run dev
 ```
-
-App runs at: **http://localhost:5173**
-
-> **Note:** Without the backend, login/register will fail. To explore all pages, the UI shows clearly-labeled demo data.
+Open [http://localhost:5173](http://localhost:5173).
 
 ---
 
-### Full Stack (Frontend + Backend)
+### Option B: Full-Stack (Frontend + Spring Boot Backend)
 
-**Step 1 — Start the backend:**
-
-```powershell
+#### 1. Start the Backend
+Make sure **JDK 21+** and **Maven** are installed.
+```bash
 cd backend
-
-# Set JAVA_HOME (adjust path if different)
-$env:JAVA_HOME = "C:\Program Files\Java\jdk-23"
-
-# Add Maven to PATH (adjust path if different)
-$env:PATH = "C:\Users\Omkar Shetake\apache-maven-3.9.11\bin;" + $env:PATH
-
-# Run with local profile (H2 in-memory database — no PostgreSQL needed)
 mvn spring-boot:run -Dspring-boot.run.profiles=local
 ```
+- Backend starts at: `http://localhost:8080`
+- Health check: `http://localhost:8080/actuator/health` → `{"status":"UP"}`
+- H2 Console: `http://localhost:8080/h2-console` (`jdbc:h2:file:./data/vetradb`, user: `sa`)
+- Swagger UI: `http://localhost:8080/swagger-ui.html`
 
-Backend starts at: **http://localhost:8080**
-
-Verify: **http://localhost:8080/actuator/health** → `{"status":"UP"}`
-
-H2 Console (dev only): **http://localhost:8080/h2-console**
-- JDBC URL: `jdbc:h2:mem:vetradb`
-- Username: `sa` / Password: (blank)
-
-**Step 2 — Start the frontend:**
-
-```powershell
+#### 2. Start the Frontend
+In a separate terminal:
+```bash
 cd frontend
 npm install
 npm run dev
 ```
-
-Frontend proxies `/api/v1/*` → `http://localhost:8080/api/v1/*` via Vite config.
+The Vite development server will proxy API requests (`/api/v1/*`) directly to `http://localhost:8080`.
 
 ---
 
-### Docker Compose
-
-Runs PostgreSQL + backend + frontend behind Nginx.
-
+### Option C: Multi-Container Docker Compose
+Run the entire production-grade stack (PostgreSQL + Spring Boot + Nginx + Frontend):
 ```bash
-# From project root
 docker compose up --build
 ```
-
-App available at: **http://localhost** (Nginx on port 80)
-
-> **First run:** Docker will build both images (~3–5 min). Flyway will apply V1 and V2 migrations automatically.
-
-**Stop:**
-```bash
-docker compose down
-```
-
-**Stop and remove volumes (reset DB):**
-```bash
-docker compose down -v
-```
+Access the application on [http://localhost](http://localhost).
 
 ---
 
-## Environment Variables
+## ⚙️ Environment Variables
 
-### Frontend (Vite)
+### Backend Configuration
+| Variable | Description | Default / Mode |
+|----------|-------------|----------------|
+| `SPRING_PROFILES_ACTIVE` | Active configuration profile | `local` (H2) or `prod` (PostgreSQL) |
+| `SPRING_DATASOURCE_URL` | JDBC Connection URL | Neon / PostgreSQL connection string |
+| `SPRING_DATASOURCE_USERNAME` | Database username | PostgreSQL user |
+| `SPRING_DATASOURCE_PASSWORD` | Database password | PostgreSQL password |
+| `GEMINI_API_KEY` | Google Gemini API Key | Used for Live AI Bullet Enhancer |
+| `JWT_SECRET` | 256-bit secret key for signing JWTs | Base64 encoded string |
 
-Create `frontend/.env.local`:
-
-```env
-VITE_API_BASE_URL=/api/v1
-```
-
-### Backend (Spring Boot — Production)
-
-Set these as environment variables or in `application-prod.yml`:
-
-| Variable | Description | Example |
+### Frontend Configuration (`frontend/.env`)
+| Variable | Description | Default |
 |----------|-------------|---------|
-| `DB_HOST` | PostgreSQL host | `localhost` |
-| `DB_PORT` | PostgreSQL port | `5432` |
-| `DB_NAME` | Database name | `vetradb` |
-| `DB_USERNAME` | DB username | `vetra` |
-| `DB_PASSWORD` | DB password | *(secure value)* |
-| `JWT_SECRET` | JWT signing secret (min 256 bits) | *(generate with openssl)* |
-| `JWT_EXPIRATION_MS` | Access token TTL in ms | `86400000` (24h) |
-
-Generate a secure JWT secret:
-```bash
-openssl rand -base64 64
-```
-
-> **Never commit secrets.** The default `application.yml` contains a placeholder JWT secret for local development only.
+| `VITE_API_BASE_URL` | API Gateway base URL | `/api/v1` |
+| `VITE_APP_NAME` | Platform branding | `Vetra` |
 
 ---
 
-## API Documentation
+## 🗄️ Database Lifecycle & Flyway Migrations
 
-With the backend running (local or Docker):
-
-- **Swagger UI:** http://localhost:8080/swagger-ui.html
-- **OpenAPI JSON:** http://localhost:8080/v3/api-docs
-
-### Key API Endpoints
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| `POST` | `/api/v1/auth/register` | ❌ | Register new user |
-| `POST` | `/api/v1/auth/login` | ❌ | Login, returns JWT |
-| `GET` | `/api/v1/auth/me` | ✅ | Current user info |
-| `POST` | `/api/v1/profile/onboarding` | ✅ | Complete onboarding |
-| `GET` | `/api/v1/jobs` | ❌ | List jobs |
-| `POST` | `/api/v1/jobs/import` | ✅ | Import a job description |
-| `GET` | `/api/v1/skills` | ❌ | List all skills |
-| `GET` | `/api/v1/skills/graph` | ❌ | Skill graph (nodes + edges) |
-| `GET` | `/api/v1/skill-gap/{role}` | ✅ | Skill gap analysis |
-| `POST` | `/api/v1/resumes/upload` | ✅ | Upload resume (PDF/DOCX) |
-| `GET` | `/api/v1/resumes/{id}/analysis` | ✅ | Resume analysis result |
-| `GET` | `/api/v1/evidence` | ✅ | User evidence items |
-| `POST` | `/api/v1/evidence` | ✅ | Add evidence |
-| `GET` | `/api/v1/assessments` | ✅ | Available assessments |
-| `GET` | `/api/v1/learning-plans/my` | ✅ | User learning plan |
+Vetra enforces immutable, version-controlled database schema evolution via Flyway:
+- **`V1__init_schema.sql`**: Baseline DDL defining users, profiles, roles, skills, jobs, evidence items, and assessments.
+- **`V2__seed_taxonomy_and_roles.sql`**: Industry foundational skills, Java backend benchmarks, and sample assessments.
+- **`V3__multi_track_taxonomy.sql`**: Multi-track expansion covering Frontend (React/TypeScript), DevOps (K8s/AWS), Full Stack, and AI/ML tracks.
+- **`V4__add_company_type_to_jobs.sql`**: Introduces company archetypes (`PRODUCT`, `STARTUP`, `SERVICE`), salary ranges, and engineering situation strategies.
 
 ---
 
-## Feature Status
+## 🔒 Security & Architecture Principles
 
-| Feature | Status | Notes |
-|---------|--------|-------|
-| Landing Page | ✅ Complete | Full sections, responsive, light/dark |
-| Authentication (JWT) | ✅ Complete | Register, Login, Logout, `useAuth` hook |
-| Onboarding Flow | ✅ Complete | 5-step, wired to backend with graceful fallback |
-| Dashboard | ✅ Complete | Demo data with clear labeling |
-| Job Intelligence | ✅ UI Complete | Import JD ✅, backend import endpoint ✅ |
-| Skill Explorer | ✅ UI Complete | Canvas-based interactive graph with demo data |
-| My Skills | ✅ UI Complete | Skill grid, evidence status |
-| Resume Studio | ✅ UI Complete | File upload UI ✅, backend upload endpoint ✅ |
-| Skill Gap Analysis | ✅ UI Complete | Radial chart, explainable gap items |
-| Learning Roadmap | ✅ UI Complete | Phased accordion, task toggling |
-| Evidence Portfolio | ✅ UI Complete | Evidence grid, add evidence dialog |
-| Assessments | ✅ UI Complete | Assessment cards + attempt history |
-| Settings | ✅ UI Complete | Profile, notifications, theme, security |
-| Dark/Light Theme | ✅ Complete | Full design token system |
-| Responsive Layout | ✅ Complete | Mobile sidebar, all pages |
-| GitHub OAuth | ⏳ Stub | UI button present; backend OAuth not wired |
-| AI/Gemini Analysis | ⏳ Stub | Architecture ready; API key not configured |
-| Token Refresh | ⏳ Partial | Refresh tokens generated; endpoint not wired |
-| PDF Export | ⏳ Not Started | UI placeholder only |
-
-> **Demo data:** All charts, scores, and skill counts in the dashboard are clearly labeled as demo data. No live market data is fabricated as real.
+- **Stateless JWT Authentication**: Secure Bearer tokens with 24-hour expiration, automated bearer interception, and role-based route guards.
+- **Domain-Driven Modular Monolith**: Zero direct cross-package entity leaking; modules communicate strictly via typed DTOs and transactional service contracts.
+- **Defensive Input Handling**: Multipart file validation with Apache PDFBox resource limits preventing memory exhaustion attacks.
+- **Explainable Career Guidance**: No fabricated scores; every skill gap highlight directly cites the underlying job requirements and candidate evidence proof.
 
 ---
 
-## Design System
-
-Vetra uses a coordinated multi-color design system defined in `frontend/src/styles/globals.css`.
-
-### Brand Colors
-
-| Color | Hex | Usage |
-|-------|-----|-------|
-| Midnight Navy | `#101828` | Dark backgrounds |
-| Indigo | `#5146E5` | Brand, primary actions |
-| Electric Violet | `#7958E8` | Secondary brand, gradients |
-
-### Semantic Colors
-
-| Color | Hex | Usage |
-|-------|-----|-------|
-| Teal | `#0F9D8A` | Verified skills, positive progress |
-| Amber | `#E9A23B` | Improvement opportunities, warnings |
-| Coral | `#E87878` | Critical gaps, errors |
-| Sky Blue | `#3296D8` | Information, analytics |
-
-### Typography
-
-- **Font:** Inter (system fallback: `-apple-system, sans-serif`)
-- **Sizes:** Tailwind default scale
-
-### Component Library
-
-Extended shadcn/ui with Vetra-specific variants:
-- **Button:** `default`, `gradient`, `destructive`, `outline`, `secondary`, `ghost`, `link`, `teal`, `subtle`
-- **Badge:** `default`, `secondary`, `destructive`, `outline`, `teal`, `amber`, `coral`, `info`, `muted`, `success`, `warning`
-
----
-
-## Architecture
-
-```
-                    ┌─────────────────────────────┐
-                    │       Nginx (port 80)        │
-                    └──────────┬──────────────────-┘
-                               │
-              ┌────────────────┼────────────────┐
-              │                │                │
-     /static (React SPA)   /api/v1/*      /h2-console
-              │                │
-    ┌─────────▼──────┐  ┌──────▼──────────────────┐
-    │  React + Vite  │  │  Spring Boot (port 8080) │
-    │  (port 5173)   │  │                          │
-    └────────────────┘  │  ┌────────────────────┐  │
-                        │  │  Security (JWT)     │  │
-                        │  ├────────────────────┤  │
-                        │  │  identity           │  │
-                        │  │  userprofile        │  │
-                        │  │  jobintelligence    │  │
-                        │  │  skillintelligence  │  │
-                        │  │  skillgap           │  │
-                        │  │  resumeintelligence │  │
-                        │  │  evidence           │  │
-                        │  │  assessment         │  │
-                        │  │  learningroadmap    │  │
-                        │  └─────────┬──────────┘  │
-                        └────────────┼─────────────┘
-                                     │
-                        ┌────────────▼─────────────┐
-                        │  H2 (local) / PostgreSQL  │
-                        └───────────────────────────┘
-```
-
-**Domain boundaries** are enforced at the package level. DTOs never expose JPA entities directly. Cross-module calls go through service interfaces, not repositories.
-
----
-
-## Running Tests
-
-```powershell
-cd backend
-# Set JAVA_HOME and Maven on PATH first (see above)
-mvn test -Dspring.profiles.active=local
-```
-
-Tests include:
-- `JobServiceTest` — job import and skill extraction
-- `SkillGapServiceTest` — gap classification logic
-- `VetraApplicationTests` — Spring context load
-
----
-
-*Built with care as a production-ready demonstration of evidence-based career intelligence.*
+## 📄 License
+This project is licensed under the MIT License.
