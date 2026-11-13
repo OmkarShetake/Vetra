@@ -113,7 +113,7 @@ public class ResumeService {
     }
 
     @Transactional
-    public ResumeDtos.ResumeUploadResponse uploadResume(MultipartFile file, User user) {
+    public ResumeDtos.ResumeAnalysisResponse uploadResume(MultipartFile file, User user) {
         if (file.isEmpty()) {
             throw new AppException("Resume file cannot be empty");
         }
@@ -144,17 +144,8 @@ public class ResumeService {
         Resume resume = new Resume(currentUser, originalFilename, file.getSize(), extractedText);
         resume = resumeRepository.save(resume);
 
-        // Run unified sync across the whole platform immediately
-        analyzeAndSyncProfile(resume, currentUser);
-
-        return new ResumeDtos.ResumeUploadResponse(
-            resume.getId(),
-            resume.getFileName(),
-            resume.getFileSize(),
-            resume.getCreatedAt(),
-            resume.getStatus(),
-            extractedText.length()
-        );
+        // Run unified sync across the whole platform and return complete analysis in one call
+        return analyzeAndSyncProfile(resume, currentUser);
     }
 
     @Transactional

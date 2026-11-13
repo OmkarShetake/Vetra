@@ -24,7 +24,12 @@ export function DashboardPage() {
   const getCachedResume = () => {
     try {
       const raw = localStorage.getItem('vetra_latest_resume_analysis')
-      return raw ? JSON.parse(raw) : null
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        if (parsed?.fileName === 'Omkar_Shetake_CV_EPAM.pdf') return null
+        return parsed
+      }
+      return null
     } catch {
       return null
     }

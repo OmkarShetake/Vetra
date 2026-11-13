@@ -22,11 +22,11 @@ public class ResumeController {
     }
 
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "Upload PDF/DOCX resume and extract text using Apache PDFBox")
-    public ResponseEntity<ApiResponse<ResumeDtos.ResumeUploadResponse>> upload(
+    @Operation(summary = "Upload PDF/DOCX resume, extract text using Apache PDFBox, and return complete ATS analysis")
+    public ResponseEntity<ApiResponse<ResumeDtos.ResumeAnalysisResponse>> upload(
             @RequestParam("file") MultipartFile file,
             @AuthenticationPrincipal User user) {
-        return ResponseEntity.ok(ApiResponse.ok("Resume uploaded and parsed", resumeService.uploadResume(file, user)));
+        return ResponseEntity.ok(ApiResponse.ok("Resume uploaded and analyzed", resumeService.uploadResume(file, user)));
     }
 
     @GetMapping("/{id}/analyze")

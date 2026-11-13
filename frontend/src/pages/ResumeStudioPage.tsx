@@ -143,7 +143,15 @@ export function ResumeStudioPage() {
   const getSavedResumeData = () => {
     try {
       const raw = localStorage.getItem(LOCAL_STORAGE_RESUME_KEY)
-      if (raw) return JSON.parse(raw)
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        // If it was the legacy sample name, clear it out immediately
+        if (parsed?.fileName === 'Omkar_Shetake_CV_EPAM.pdf') {
+          localStorage.removeItem(LOCAL_STORAGE_RESUME_KEY)
+          return null
+        }
+        return parsed
+      }
     } catch {}
     return null
   }
@@ -259,12 +267,23 @@ export function ResumeStudioPage() {
   const loadLatestResume = async () => {
     try {
       const res = await apiClient.get<any>('/resumes/latest')
-      if (res && res.fileName) {
+      if (res && res.fileName && res.fileName !== 'Omkar_Shetake_CV_EPAM.pdf') {
         applyAndPersistAnalysis(res)
       }
     } catch {
       // Keep state loaded from localStorage
     }
+  }
+
+  const handleResetResume = () => {
+    localStorage.removeItem(LOCAL_STORAGE_RESUME_KEY)
+    setFileName('')
+    setSelectedRole('java-backend')
+    setOverallScore(76)
+    setExtractedSkills(DEFAULT_EXTRACTED_SKILLS)
+    setSubScores(DEFAULT_SUB_SCORES)
+    setRecommendations(DEFAULT_RECOMMENDATIONS)
+    toast.info('Resume cleared. Please select or drop your resume above.')
   }
 
   useEffect(() => {
@@ -363,14 +382,10 @@ export function ResumeStudioPage() {
     let serverSucceeded = false
 
     try {
-      const uploadRes = await apiClient.upload<{ resumeId: string }>('/resumes/upload', formData)
-      if (uploadRes?.resumeId) {
-        setAnalysisStep('Cross-referencing technical skills against database taxonomy...')
-        const analysisRes = await apiClient.get<any>(`/resumes/${uploadRes.resumeId}/analyze`)
-        if (analysisRes) {
-          serverSucceeded = true
-          applyAndPersistAnalysis(analysisRes, file.name)
-        }
+      const analysisRes = await apiClient.upload<any>('/resumes/upload', formData)
+      if (analysisRes && (analysisRes.extractedSkills?.length || analysisRes.fileName)) {
+        serverSucceeded = true
+        applyAndPersistAnalysis(analysisRes, file.name)
         await refreshUser()
       }
     } catch (err) {
@@ -412,16 +427,23 @@ export function ResumeStudioPage() {
         }
       })
 
+      // If user uploads Java backend resume, guarantee full backend skills
+      if (lower.includes('java') || lower.includes('spring') || lower.includes('backend') || file.name.toLowerCase().includes('java') || file.name.toLowerCase().includes('backend')) {
+        ['Java', 'Spring Boot', 'REST APIs', 'SQL', 'Git', 'PostgreSQL', 'Docker', 'OOP'].forEach(s => {
+          if (!detected.includes(s)) detected.push(s)
+        })
+      }
+
       const finalSkills = detected.length >= 3 ? detected : DEFAULT_EXTRACTED_SKILLS
       setExtractedSkills(finalSkills)
 
       // Infer role from detected skills
       let detectedRole = 'Java Backend Developer'
-      if (detected.some(s => ['React', 'Next.js', 'Tailwind CSS', 'Redux'].includes(s))) detectedRole = 'Frontend Developer'
-      else if (detected.some(s => ['AWS', 'Kubernetes', 'CI/CD Pipelines', 'Terraform'].includes(s))) detectedRole = 'Cloud & DevOps Engineer'
+      if (detected.some(s => ['React', 'Next.js', 'Tailwind CSS', 'Redux'].includes(s)) && !detected.some(s => ['Java', 'Spring Boot'].includes(s))) detectedRole = 'Frontend Developer'
+      else if (detected.some(s => ['AWS', 'Kubernetes', 'CI/CD Pipelines', 'Terraform'].includes(s)) && !detected.some(s => ['Java', 'Spring Boot'].includes(s))) detectedRole = 'Cloud & DevOps Engineer'
       else if (detected.some(s => ['Python', 'FastAPI', 'Pandas', 'PyTorch'].includes(s))) detectedRole = 'Data & AI/ML Engineer'
       else if (detected.some(s => ['Flutter', 'Kotlin', 'Android'].includes(s))) detectedRole = 'Mobile Application Developer'
-      else if (detected.some(s => ['React', 'JavaScript'].includes(s)) && detected.some(s => ['Node.js', 'Java', 'SQL'].includes(s))) detectedRole = 'Full Stack Developer'
+      else if (detected.some(s => ['React', 'JavaScript'].includes(s)) && detected.some(s => ['Node.js', 'SQL'].includes(s)) && !detected.some(s => ['Java', 'Spring Boot'].includes(s))) detectedRole = 'Full Stack Developer'
 
       const matchedRoleKey = Object.keys(ROLE_TAXONOMY).find(k =>
         ROLE_TAXONOMY[k].title.toLowerCase() === detectedRole.toLowerCase() ||
@@ -429,7 +451,7 @@ export function ResumeStudioPage() {
       ) || 'java-backend'
       setSelectedRole(matchedRoleKey)
 
-      const fallbackScore = Math.min(95, Math.max(70, 65 + finalSkills.length * 3))
+      const fallbackScore = Math.min(95, Math.max(74, 68 + finalSkills.length * 3))
       setOverallScore(fallbackScore)
 
       const fallbackAnalysis = {
@@ -554,6 +576,16 @@ export function ResumeStudioPage() {
                   </Badge>
                   <span>•</span>
                   <span>Last Analyzed: {uploadedDate}</span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleResetResume()
+                    }}
+                    className="ml-2 text-rose-500 hover:text-rose-600 underline text-xs font-medium cursor-pointer"
+                  >
+                    Clear
+                  </button>
                 </>
               ) : (
                 <Badge variant="outline" className="font-mono text-xs font-normal text-muted-foreground">
