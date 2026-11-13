@@ -21,13 +21,29 @@ import { apiClient } from '@/lib/api'
 export function DashboardPage() {
   const { user } = useAuth()
 
+  const getCachedResume = () => {
+    try {
+      const raw = localStorage.getItem('vetra_latest_resume_analysis')
+      return raw ? JSON.parse(raw) : null
+    } catch {
+      return null
+    }
+  }
+
+  const cachedResume = getCachedResume()
+
   const [loading, setLoading] = useState(true)
-  const [targetRole, setTargetRole] = useState(user?.targetRole || 'Java Backend Developer')
-  const [readinessScore, setReadinessScore] = useState(72)
-  const [demonstratedSkills, setDemonstratedSkills] = useState<string[]>(['Java', 'OOP', 'SQL', 'Git', 'REST APIs', 'PostgreSQL'])
+  const [targetRole, setTargetRole] = useState(
+    cachedResume?.detectedRole || localStorage.getItem('vetra_target_role') || user?.targetRole || 'Java Backend Developer'
+  )
+  const [readinessScore, setReadinessScore] = useState(cachedResume?.overallScore || 72)
+  const [demonstratedSkills, setDemonstratedSkills] = useState<string[]>(
+    cachedResume?.extractedSkills || ['Java', 'OOP', 'SQL', 'Git', 'REST APIs', 'PostgreSQL']
+  )
   const [evidenceCount, setEvidenceCount] = useState<number>(6)
   const [verifiedCount, setVerifiedCount] = useState<number>(4)
   const [jobCount, setJobCount] = useState<number>(12)
+  const [latestResumeFile, setLatestResumeFile] = useState<string>(cachedResume?.fileName || '')
   const [demandChart, setDemandChart] = useState([
     { skill: 'Java', demand: 89 },
     { skill: 'Spring Boot', demand: 82 },
@@ -39,6 +55,16 @@ export function DashboardPage() {
 
   useEffect(() => {
     fetchDashboardData()
+
+    const handleSync = (e: any) => {
+      const data = e.detail
+      if (data?.detectedRole) setTargetRole(data.detectedRole)
+      if (data?.overallScore) setReadinessScore(data.overallScore)
+      if (data?.extractedSkills?.length) setDemonstratedSkills(data.extractedSkills)
+      if (data?.fileName) setLatestResumeFile(data.fileName)
+    }
+    window.addEventListener('vetra_resume_synced', handleSync)
+    return () => window.removeEventListener('vetra_resume_synced', handleSync)
   }, [])
 
   const fetchDashboardData = async () => {

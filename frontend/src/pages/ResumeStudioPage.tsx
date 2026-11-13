@@ -89,44 +89,187 @@ const ROLE_TAXONOMY: Record<string, { title: string; required: string[]; preferr
   }
 }
 
+const LOCAL_STORAGE_RESUME_KEY = 'vetra_latest_resume_analysis'
+
 const DEFAULT_EXTRACTED_SKILLS = ['Java', 'OOP', 'Spring Boot', 'REST APIs', 'SQL', 'Git', 'PostgreSQL', 'Collections']
+
+const DEFAULT_SUB_SCORES: SubScore[] = [
+  { key: 'structure', label: 'Structure & Completeness', value: 85, description: 'Contains 6 of 7 standard ATS sections. Missing a top-line career summary.' },
+  { key: 'skillCoverage', label: 'Technical Skill Coverage', value: 72, description: 'Solid fundamentals; missing cloud/DevOps keywords (Docker, Kubernetes).' },
+  { key: 'keywordCoverage', label: 'Role Keyword Alignment', value: 68, description: 'Includes 70% of frequent terms found in modern job postings.' },
+  { key: 'projectQuality', label: 'Project Depth & Architecture', value: 78, description: 'Project descriptions detail technologies used; needs more metric outcomes.' },
+  { key: 'readability', label: 'ATS Readability & Formatting', value: 92, description: 'Single-column parseable layout with clear headings and standard bullet points.' },
+  { key: 'evidenceAlignment', label: 'Proof & Repository Grounding', value: 65, description: 'Has project entries; link clickable GitHub URLs for instant recruiter verification.' },
+]
+
+const DEFAULT_RECOMMENDATIONS: Recommendation[] = [
+  {
+    id: 'rec1',
+    category: 'Keyword Optimization',
+    priority: 'CRITICAL',
+    title: 'Incorporate Containerization & Cloud Keywords',
+    description: 'Docker and cloud platforms appear in 74% of modern engineering postings. Add containerization experience under projects or tools.',
+    accepted: false
+  },
+  {
+    id: 'rec2',
+    category: 'Evidence Grounding',
+    priority: 'HIGH',
+    title: 'Attach Verifiable GitHub Repository Links',
+    description: 'Ensure each project has a clickable GitHub repo link so technical recruiters can immediately verify code style, tests, and commit history.',
+    accepted: false
+  },
+  {
+    id: 'rec3',
+    category: 'Project Impact',
+    priority: 'HIGH',
+    title: 'Quantify Engineering Outcomes with Concrete Metrics',
+    description: 'Replace passive phrases with strong metrics: "Engineered high-throughput service serving 15+ endpoints with PostgreSQL transactions".',
+    accepted: false
+  },
+  {
+    id: 'rec4',
+    category: 'Structure',
+    priority: 'MEDIUM',
+    title: 'Add a 2-Line Targeted Professional Summary',
+    description: 'Open with a concise summary naming your target engineering role to anchor ATS parsers.',
+    accepted: false
+  }
+]
 
 export function ResumeStudioPage() {
   const { user, refreshUser } = useAuth()
+
+  const getSavedResumeData = () => {
+    try {
+      const raw = localStorage.getItem(LOCAL_STORAGE_RESUME_KEY)
+      if (raw) return JSON.parse(raw)
+    } catch {}
+    return null
+  }
+
+  const savedData = getSavedResumeData()
+
   const [analyzing, setAnalyzing] = useState(false)
   const [analysisStep, setAnalysisStep] = useState<string>('')
-  const [fileName, setFileName] = useState<string>('Omkar_Shetake_CV_EPAM.pdf')
-  const [uploadedDate, setUploadedDate] = useState<string>(new Date().toISOString().split('T')[0])
-  const [selectedRole, setSelectedRole] = useState<string>('spring-boot')
-  const [overallScore, setOverallScore] = useState<number>(76)
+  const [fileName, setFileName] = useState<string>(savedData?.fileName || '')
+  const [uploadedDate, setUploadedDate] = useState<string>(() => {
+    if (savedData?.uploadedAt) {
+      try { return new Date(savedData.uploadedAt).toISOString().split('T')[0] } catch {}
+    }
+    return savedData?.uploadedDate || new Date().toISOString().split('T')[0]
+  })
+  const [selectedRole, setSelectedRole] = useState<string>(() => {
+    if (savedData?.detectedRole) {
+      const match = Object.keys(ROLE_TAXONOMY).find(k =>
+        ROLE_TAXONOMY[k].title.toLowerCase() === savedData.detectedRole.toLowerCase() ||
+        savedData.detectedRole.toLowerCase().includes(ROLE_TAXONOMY[k].title.toLowerCase())
+      )
+      if (match) return match
+    }
+    if (user?.targetRole) {
+      const match = Object.keys(ROLE_TAXONOMY).find(k =>
+        ROLE_TAXONOMY[k].title.toLowerCase() === user.targetRole?.toLowerCase() ||
+        user.targetRole?.toLowerCase().includes(ROLE_TAXONOMY[k].title.toLowerCase())
+      )
+      if (match) return match
+    }
+    return 'spring-boot'
+  })
+  const [overallScore, setOverallScore] = useState<number>(savedData?.overallScore ?? 76)
   const [activeTab, setActiveTab] = useState<string>('alignment')
   const [dragging, setDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => {
-    loadLatestResume()
-  }, [])
+  // Extracted skills from resume
+  const [extractedSkills, setExtractedSkills] = useState<string[]>(savedData?.extractedSkills || DEFAULT_EXTRACTED_SKILLS)
+
+  // Subscores
+  const [subScores, setSubScores] = useState<SubScore[]>(savedData?.subScores || DEFAULT_SUB_SCORES)
+
+  // Actionable recommendations
+  const [recommendations, setRecommendations] = useState<Recommendation[]>(savedData?.recommendations || DEFAULT_RECOMMENDATIONS)
+
+  // Section analysis
+  const [sectionsHealth, setSectionsHealth] = useState<SectionHealth[]>([
+    { name: 'Contact Information', present: true, tip: 'Professional email, LinkedIn, and GitHub links present.' },
+    { name: 'Technical Skills Summary', present: true, tip: 'Clear grouped taxonomy: Languages, Frameworks, Databases.' },
+    { name: 'Projects with Architecture', present: true, tip: 'Project entries found; ensure measurable metrics are included.' },
+    { name: 'Work / Internship Experience', present: true, tip: 'Experience dates and responsibilities detected.' },
+    { name: 'Education & Degree', present: true, tip: 'Graduation degree and institution detected.' },
+    { name: 'Professional Summary', present: false, tip: 'Missing a 2-3 line target role summary at the very top.' },
+    { name: 'Certifications', present: true, tip: 'Verified credentials found.' },
+  ])
+
+  const applyAndPersistAnalysis = (data: any, customFileName?: string) => {
+    if (!data) return
+
+    const fname = data.fileName || customFileName || fileName
+    if (fname) setFileName(fname)
+
+    if (data.overallScore) setOverallScore(data.overallScore)
+    if (data.extractedSkills?.length) setExtractedSkills(data.extractedSkills)
+    if (data.subScores?.length) setSubScores(data.subScores)
+    if (data.recommendations?.length) setRecommendations(data.recommendations)
+
+    if (data.detectedSections?.length) {
+      setSectionsHealth(prev => prev.map(s => ({
+        ...s,
+        present: data.detectedSections.some((ds: string) => ds.toLowerCase().includes(s.name.toLowerCase().split(' ')[0]))
+      })))
+    }
+
+    let detectedKey = selectedRole
+    if (data.detectedRole) {
+      const roleKey = Object.keys(ROLE_TAXONOMY).find(k =>
+        ROLE_TAXONOMY[k].title.toLowerCase() === data.detectedRole.toLowerCase() ||
+        data.detectedRole.toLowerCase().includes(ROLE_TAXONOMY[k].title.toLowerCase())
+      )
+      if (roleKey) {
+        setSelectedRole(roleKey)
+        detectedKey = roleKey
+      }
+    }
+
+    const dateStr = data.uploadedAt ? new Date(data.uploadedAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+    setUploadedDate(dateStr)
+
+    // Save snapshot to localStorage so tab switching NEVER resets it
+    const snapshot = {
+      ...data,
+      fileName: fname,
+      uploadedDate: dateStr,
+      detectedRoleKey: detectedKey,
+      overallScore: data.overallScore || overallScore,
+      extractedSkills: data.extractedSkills || extractedSkills,
+      subScores: data.subScores || subScores,
+      recommendations: data.recommendations || recommendations
+    }
+    try {
+      localStorage.setItem(LOCAL_STORAGE_RESUME_KEY, JSON.stringify(snapshot))
+      if (data.detectedRole) {
+        localStorage.setItem('vetra_target_role', data.detectedRole)
+      }
+    } catch {}
+
+    // Dispatch global event so all pages instantly synchronize
+    window.dispatchEvent(new CustomEvent('vetra_resume_synced', { detail: snapshot }))
+  }
 
   const loadLatestResume = async () => {
     try {
       const res = await apiClient.get<any>('/resumes/latest')
-      if (res) {
-        if (res.fileName) setFileName(res.fileName)
-        if (res.overallScore) setOverallScore(res.overallScore)
-        if (res.extractedSkills?.length) setExtractedSkills(res.extractedSkills)
-        if (res.subScores?.length) setSubScores(res.subScores)
-        if (res.detectedRole) {
-          const roleKey = Object.keys(ROLE_TAXONOMY).find(k =>
-            ROLE_TAXONOMY[k].title.toLowerCase() === res.detectedRole.toLowerCase() ||
-            res.detectedRole.toLowerCase().includes(ROLE_TAXONOMY[k].title.toLowerCase())
-          )
-          if (roleKey) setSelectedRole(roleKey)
-        }
+      if (res && res.fileName) {
+        applyAndPersistAnalysis(res)
       }
     } catch {
-      // Keep defaults
+      // Keep state loaded from localStorage
     }
   }
+
+  useEffect(() => {
+    loadLatestResume()
+  }, [])
 
   // Live Gemini AI Bullet Rewriter states
   const [customBullet, setCustomBullet] = useState<string>('')
@@ -172,66 +315,6 @@ export function ResumeStudioPage() {
     }
   }
 
-  // Extracted skills from resume
-  const [extractedSkills, setExtractedSkills] = useState<string[]>(DEFAULT_EXTRACTED_SKILLS)
-
-  // Section analysis
-  const [sectionsHealth, setSectionsHealth] = useState<SectionHealth[]>([
-    { name: 'Contact Information', present: true, tip: 'Professional email, LinkedIn, and GitHub links present.' },
-    { name: 'Technical Skills Summary', present: true, tip: 'Clear grouped taxonomy: Languages, Frameworks, Databases.' },
-    { name: 'Projects with Architecture', present: true, tip: 'Project entries found; ensure measurable metrics are included.' },
-    { name: 'Work / Internship Experience', present: true, tip: 'Experience dates and responsibilities detected.' },
-    { name: 'Education & Degree', present: true, tip: 'Graduation degree and institution detected.' },
-    { name: 'Professional Summary', present: false, tip: 'Missing a 2-3 line target role summary at the very top.' },
-    { name: 'Certifications', present: true, tip: 'Verified credentials found.' },
-  ])
-
-  // Subscores
-  const [subScores, setSubScores] = useState<SubScore[]>([
-    { key: 'structure', label: 'Structure & Completeness', value: 85, description: 'Contains 6 of 7 standard ATS sections. Missing a top-line career summary.' },
-    { key: 'skillCoverage', label: 'Technical Skill Coverage', value: 72, description: 'Solid Java & Spring fundamentals; missing cloud/DevOps keywords (Docker, Kubernetes).' },
-    { key: 'keywordCoverage', label: 'Role Keyword Alignment', value: 68, description: 'Includes 70% of frequent terms found in Spring Boot job postings.' },
-    { key: 'projectQuality', label: 'Project Depth & Architecture', value: 78, description: 'Project descriptions detail technologies used; needs more metric outcomes.' },
-    { key: 'readability', label: 'ATS Readability & Formatting', value: 92, description: 'Single-column parseable layout with clear headings and standard bullet points.' },
-    { key: 'evidenceAlignment', label: 'Proof & Repository Grounding', value: 65, description: 'Has project entries; link clickable GitHub URLs for instant recruiter verification.' },
-  ])
-
-  // Actionable recommendations
-  const [recommendations, setRecommendations] = useState<Recommendation[]>([
-    {
-      id: 'rec1',
-      category: 'Keyword Optimization',
-      priority: 'CRITICAL',
-      title: 'Incorporate Docker & Containerization Keywords',
-      description: 'Docker appears in 74% of modern Spring Boot job postings. Add your Dockerfile and Docker Compose experience under projects or tools.',
-      accepted: false
-    },
-    {
-      id: 'rec2',
-      category: 'Evidence Grounding',
-      priority: 'HIGH',
-      title: 'Attach Verifiable GitHub Repository Links',
-      description: 'Ensure each project has a clickable GitHub repo link so technical recruiters can immediately verify code style, tests, and commit history.',
-      accepted: false
-    },
-    {
-      id: 'rec3',
-      category: 'Project Impact',
-      priority: 'HIGH',
-      title: 'Quantify Engineering Outcomes with Concrete Metrics',
-      description: 'Replace "Developed REST API" with "Engineered a high-throughput Spring Boot REST API serving 15+ endpoints with PostgreSQL transactions".',
-      accepted: false
-    },
-    {
-      id: 'rec4',
-      category: 'Structure',
-      priority: 'MEDIUM',
-      title: 'Add a 2-Line Targeted Professional Summary',
-      description: 'Open with "Aspiring Backend Engineer specializing in Java, Spring Boot, and relational database architecture" to anchor ATS parsers.',
-      accepted: false
-    }
-  ])
-
   // Bullet point examples
   const bulletExamples: BulletExample[] = [
     {
@@ -268,19 +351,16 @@ export function ResumeStudioPage() {
       (currentRole.required.length * 1.5 + currentRole.preferred.length * 0.5)) * 100
   )
 
-  // Real upload handler with server extraction + client fallback
+  // Real upload handler with server extraction + client fallback + localStorage persistence
   const processFile = async (file: File) => {
     setFileName(file.name)
     setAnalyzing(true)
+    setAnalysisStep('Uploading document & extracting text with Apache PDFBox...')
 
-    // Stage 1: Document reading
-    setAnalysisStep('Reading document binary with Apache PDFBox...')
     const formData = new FormData()
     formData.append('file', file)
 
-    let serverExtractedSkills: string[] | null = null
-    let serverSubScores: SubScore[] | null = null
-    let serverOverallScore: number | null = null
+    let serverSucceeded = false
 
     try {
       const uploadRes = await apiClient.upload<{ resumeId: string }>('/resumes/upload', formData)
@@ -288,57 +368,67 @@ export function ResumeStudioPage() {
         setAnalysisStep('Cross-referencing technical skills against database taxonomy...')
         const analysisRes = await apiClient.get<any>(`/resumes/${uploadRes.resumeId}/analyze`)
         if (analysisRes) {
-          if (analysisRes.extractedSkills?.length) serverExtractedSkills = analysisRes.extractedSkills
-          if (analysisRes.subScores?.length) serverSubScores = analysisRes.subScores
-          if (analysisRes.overallScore) serverOverallScore = analysisRes.overallScore
-          if (analysisRes.detectedRole) {
-            const roleKey = Object.keys(ROLE_TAXONOMY).find(k =>
-              ROLE_TAXONOMY[k].title.toLowerCase() === analysisRes.detectedRole.toLowerCase() ||
-              analysisRes.detectedRole.toLowerCase().includes(ROLE_TAXONOMY[k].title.toLowerCase())
-            )
-            if (roleKey) setSelectedRole(roleKey)
-          }
+          serverSucceeded = true
+          applyAndPersistAnalysis(analysisRes, file.name)
         }
         await refreshUser()
       }
-    } catch {
-      // Backend offline: use graceful client-side text extractor
+    } catch (err) {
+      console.warn('Backend upload encountered an issue, falling back to local analysis:', err)
     }
 
-    // Try reading text in browser if PDF or text
-    const textSample = await file.text().catch(() => '')
-    const lower = (file.name + ' ' + textSample).toLowerCase()
+    if (!serverSucceeded) {
+      // Graceful client-side text extractor if backend was unreachable
+      const textSample = await file.text().catch(() => '')
+      const lower = (file.name + ' ' + textSample).toLowerCase()
 
-    // Detect skills in file
-    const detected: string[] = []
-    const allTaxonomy = ['Java', 'Spring Boot', 'Spring Security', 'REST APIs', 'SQL', 'PostgreSQL', 'Docker', 'Git', 'OOP', 'Redis', 'Kafka', 'JUnit', 'Hibernate', 'Microservices', 'Collections', 'Maven']
-    allTaxonomy.forEach(skill => {
-      if (lower.includes(skill.toLowerCase()) || file.name.toLowerCase().includes('cv') || file.name.toLowerCase().includes('epam')) {
-        detected.push(skill)
-      }
-    })
+      const detected: string[] = []
+      const allTaxonomy = [
+        'Java', 'Spring Boot', 'Spring Security', 'REST APIs', 'SQL', 'PostgreSQL',
+        'Docker', 'Git', 'OOP', 'Redis', 'Kafka', 'JUnit', 'Hibernate', 'Microservices',
+        'React', 'TypeScript', 'JavaScript', 'Next.js', 'Tailwind CSS', 'Node.js',
+        'Python', 'FastAPI', 'AWS', 'Kubernetes', 'CI/CD Pipelines', 'Linux', 'Flutter', 'Kotlin'
+      ]
+      allTaxonomy.forEach(skill => {
+        if (lower.includes(skill.toLowerCase())) {
+          detected.push(skill)
+        }
+      })
 
-    setTimeout(() => {
-      setAnalysisStep('Evaluating ATS section structure and role requirements...')
-    }, 600)
-
-    setTimeout(() => {
-      setAnalyzing(false)
-      setUploadedDate(new Date().toISOString().split('T')[0])
-
-      const finalSkills = serverExtractedSkills || (detected.length >= 4 ? detected.slice(0, 8) : DEFAULT_EXTRACTED_SKILLS)
+      const finalSkills = detected.length >= 3 ? detected : DEFAULT_EXTRACTED_SKILLS
       setExtractedSkills(finalSkills)
 
-      if (serverSubScores) {
-        setSubScores(serverSubScores)
+      // Infer role from detected skills
+      let detectedRole = 'Java Backend Developer'
+      if (detected.some(s => ['React', 'Next.js', 'Tailwind CSS', 'Redux'].includes(s))) detectedRole = 'Frontend Developer'
+      else if (detected.some(s => ['AWS', 'Kubernetes', 'CI/CD Pipelines', 'Terraform'].includes(s))) detectedRole = 'Cloud / DevOps Engineer'
+      else if (detected.some(s => ['Python', 'FastAPI', 'Pandas', 'PyTorch'].includes(s))) detectedRole = 'AI / Machine Learning Engineer'
+      else if (detected.some(s => ['Flutter', 'Kotlin', 'Android'].includes(s))) detectedRole = 'Mobile Developer'
+      else if (detected.some(s => ['React', 'JavaScript'].includes(s)) && detected.some(s => ['Node.js', 'Java', 'SQL'].includes(s))) detectedRole = 'Full Stack Developer'
+
+      const matchedRoleKey = Object.keys(ROLE_TAXONOMY).find(k =>
+        ROLE_TAXONOMY[k].title.toLowerCase() === detectedRole.toLowerCase() ||
+        detectedRole.toLowerCase().includes(ROLE_TAXONOMY[k].title.toLowerCase())
+      ) || 'spring-boot'
+      setSelectedRole(matchedRoleKey)
+
+      const fallbackScore = Math.min(95, Math.max(68, 62 + finalSkills.length * 3))
+      setOverallScore(fallbackScore)
+
+      const fallbackAnalysis = {
+        fileName: file.name,
+        overallScore: fallbackScore,
+        detectedRole,
+        extractedSkills: finalSkills,
+        uploadedAt: new Date().toISOString()
       }
+      applyAndPersistAnalysis(fallbackAnalysis, file.name)
+    }
 
-      setOverallScore(serverOverallScore || Math.min(95, Math.max(65, roleMatchPct + 8)))
-
-      toast.success(`Resume "${file.name}" analyzed successfully!`, {
-        description: `Identified ${finalSkills.length} verified technical skills. Review your role match below.`
-      })
-    }, 1200)
+    setAnalyzing(false)
+    toast.success(`Resume "${file.name}" analyzed successfully!`, {
+      description: `Identified verified technical skills. Review your role match below.`
+    })
   }
 
   const handleDrop = (e: React.DragEvent) => {
@@ -436,11 +526,19 @@ export function ResumeStudioPage() {
               </p>
             </div>
             <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
-              <Badge variant="muted" className="font-mono text-xs font-normal">
-                {fileName}
-              </Badge>
-              <span>Ã¢â‚¬Â¢</span>
-              <span>Last Analyzed: {uploadedDate}</span>
+              {fileName ? (
+                <>
+                  <Badge variant="muted" className="font-mono text-xs font-normal">
+                    {fileName}
+                  </Badge>
+                  <span>•</span>
+                  <span>Last Analyzed: {uploadedDate}</span>
+                </>
+              ) : (
+                <Badge variant="outline" className="font-mono text-xs font-normal text-muted-foreground">
+                  No resume uploaded yet • Select or drop your resume above
+                </Badge>
+              )}
             </div>
           </div>
         )}

@@ -46,6 +46,7 @@ public class ResumeDtos {
         List<ResumeSubScore> subScores,
         List<ResumeSuggestionDto> recommendations,
         List<String> extractedSkills,
-        List<String> detectedSections
+        List<String> detectedSections,
+        Instant uploadedAt
     ) {}
 }

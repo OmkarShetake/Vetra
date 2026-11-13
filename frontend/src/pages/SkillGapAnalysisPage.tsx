@@ -56,6 +56,11 @@ interface SkillGapItem {
 
 const targetRoles = [
   'Java Backend Developer',
+  'Full Stack Developer',
+  'Frontend Developer',
+  'Cloud / DevOps Engineer',
+  'AI / Machine Learning Engineer',
+  'Mobile Developer (Android/Flutter)',
   'Software Engineer',
   'Spring Boot Developer',
 ]
@@ -172,7 +177,12 @@ function importanceBadgeVariant(importance: Importance) {
 
 export function SkillGapAnalysisPage() {
   const { user } = useAuth()
-  const [selectedRole, setSelectedRole] = useState<string>(user?.targetRole || targetRoles[0])
+  const [selectedRole, setSelectedRole] = useState<string>(() => {
+    const saved = localStorage.getItem('vetra_target_role')
+    if (saved && targetRoles.includes(saved)) return saved
+    if (user?.targetRole && targetRoles.includes(user.targetRole)) return user.targetRole
+    return targetRoles[0]
+  })
   const [skills, setSkills] = useState<SkillGapItem[]>(fallbackSkills)
   const [overallScore, setOverallScore] = useState<number>(75)
   const [demonstratedCount, setDemonstratedCount] = useState<number>(3)
@@ -185,6 +195,17 @@ export function SkillGapAnalysisPage() {
   useEffect(() => {
     runAnalysis(selectedRole)
   }, [selectedRole])
+
+  useEffect(() => {
+    const handleResumeSync = (e: any) => {
+      const role = e.detail?.detectedRole || localStorage.getItem('vetra_target_role')
+      if (role && targetRoles.includes(role)) {
+        setSelectedRole(role)
+      }
+    }
+    window.addEventListener('vetra_resume_synced', handleResumeSync)
+    return () => window.removeEventListener('vetra_resume_synced', handleResumeSync)
+  }, [])
 
   const runAnalysis = async (roleToAnalyze: string) => {
     setLoading(true)
