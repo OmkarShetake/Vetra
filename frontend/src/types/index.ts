@@ -76,6 +76,9 @@ export interface Job {
   preferredSkills: string[]
   responsibilities: string[]
   qualifications: string[]
+  companyType?: 'PRODUCT' | 'STARTUP' | 'SERVICE'
+  salaryRange?: string
+  situationAdvice?: string
 }
 
 export interface JobImportRequest {

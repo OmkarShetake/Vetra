@@ -23,9 +23,11 @@ public class JobController {
     }
 
     @GetMapping
-    @Operation(summary = "Get all jobs with optional keyword search")
-    public ResponseEntity<ApiResponse<List<JobDtos.JobResponse>>> getJobs(@RequestParam(required = false) String search) {
-        return ResponseEntity.ok(ApiResponse.ok(jobService.getAllJobs(search)));
+    @Operation(summary = "Get all jobs with optional keyword and company archetype search")
+    public ResponseEntity<ApiResponse<List<JobDtos.JobResponse>>> getJobs(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String companyType) {
+        return ResponseEntity.ok(ApiResponse.ok(jobService.getAllJobs(search, companyType)));
     }
 
     @PostMapping("/import")

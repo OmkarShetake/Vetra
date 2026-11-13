@@ -49,6 +49,12 @@ public class Job {
     @Column(name = "skill_name")
     private List<String> preferredSkills = new ArrayList<>();
 
+    private String companyType; // "PRODUCT", "STARTUP", "SERVICE"
+    private String salaryRange;
+
+    @Column(columnDefinition = "TEXT")
+    private String situationAdvice;
+
     private Instant createdAt = Instant.now();
 
     public Job() {
@@ -79,6 +85,12 @@ public class Job {
     public void setRequiredSkills(List<String> requiredSkills) { this.requiredSkills = requiredSkills; }
     public List<String> getPreferredSkills() { return preferredSkills; }
     public void setPreferredSkills(List<String> preferredSkills) { this.preferredSkills = preferredSkills; }
+    public String getCompanyType() { return companyType; }
+    public void setCompanyType(String companyType) { this.companyType = companyType; }
+    public String getSalaryRange() { return salaryRange; }
+    public void setSalaryRange(String salaryRange) { this.salaryRange = salaryRange; }
+    public String getSituationAdvice() { return situationAdvice; }
+    public void setSituationAdvice(String situationAdvice) { this.situationAdvice = situationAdvice; }
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
 }

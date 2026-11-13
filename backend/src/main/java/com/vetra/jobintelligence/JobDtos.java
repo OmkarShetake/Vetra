@@ -13,7 +13,10 @@ public class JobDtos {
         String location,
         String employmentType,
         String experienceLevel,
-        String sourceUrl
+        String sourceUrl,
+        String companyType,
+        String salaryRange,
+        String situationAdvice
     ) {}
 
     public record JobResponse(
@@ -28,7 +31,10 @@ public class JobDtos {
         Instant collectedDate,
         String description,
         List<String> requiredSkills,
-        List<String> preferredSkills
+        List<String> preferredSkills,
+        String companyType,
+        String salaryRange,
+        String situationAdvice
     ) {
         public static JobResponse from(Job job) {
             return new JobResponse(
@@ -43,7 +49,10 @@ public class JobDtos {
                 job.getCollectedDate(),
                 job.getDescription(),
                 job.getRequiredSkills(),
-                job.getPreferredSkills()
+                job.getPreferredSkills(),
+                job.getCompanyType(),
+                job.getSalaryRange(),
+                job.getSituationAdvice()
             );
         }
     }
@@ -56,6 +65,6 @@ public class JobDtos {
         List<String> matchedSkills,
         List<String> missingRequiredSkills,
         List<String> missingPreferredSkills,
-        String careerAdvice
+        String personalizedAdvice
     ) {}
 }
