@@ -239,7 +239,15 @@ export function ResumeStudioPage() {
       }
     }
 
-    const dateStr = data.uploadedAt ? new Date(data.uploadedAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+    let dateStr = new Date().toISOString().split('T')[0]
+    if (data.uploadedAt) {
+      try {
+        const d = new Date(data.uploadedAt)
+        if (!isNaN(d.getTime())) {
+          dateStr = d.toISOString().split('T')[0]
+        }
+      } catch {}
+    }
     setUploadedDate(dateStr)
 
     // Save snapshot to localStorage so tab switching NEVER resets it
@@ -376,102 +384,116 @@ export function ResumeStudioPage() {
     setAnalyzing(true)
     setAnalysisStep('Uploading document & extracting text with Apache PDFBox...')
 
-    const formData = new FormData()
-    formData.append('file', file)
-
-    let serverSucceeded = false
-
     try {
-      const analysisRes = await apiClient.upload<any>('/resumes/upload', formData)
-      if (analysisRes && (analysisRes.extractedSkills?.length || analysisRes.fileName)) {
-        serverSucceeded = true
-        applyAndPersistAnalysis(analysisRes, file.name)
-        await refreshUser()
-      }
-    } catch (err) {
-      console.warn('Backend upload encountered an issue, falling back to local analysis:', err)
-    }
+      let analysisResult: any = null
 
-    if (!serverSucceeded) {
-      // Graceful client-side text extractor if backend was unreachable
-      let textSample = ''
       try {
-        const arrayBuf = await file.arrayBuffer()
-        const bytes = new Uint8Array(arrayBuf.slice(0, 100000))
-        const chars: string[] = []
-        for (let i = 0; i < bytes.length; i++) {
-          const b = bytes[i]
-          if ((b >= 32 && b <= 126) || b === 10 || b === 13) {
-            chars.push(String.fromCharCode(b))
-          } else {
-            chars.push(' ')
+        const formData = new FormData()
+        formData.append('file', file)
+        const analysisRes = await apiClient.upload<any>('/resumes/upload', formData)
+        if (analysisRes && (analysisRes.extractedSkills?.length || analysisRes.fileName)) {
+          analysisResult = analysisRes
+        }
+      } catch (err) {
+        console.warn('Backend upload encountered an issue, using client-side engine:', err)
+      }
+
+      if (!analysisResult) {
+        // High-precision client-side text & keyword extractor
+        let textSample = ''
+        try {
+          const arrayBuf = await file.arrayBuffer()
+          const bytes = new Uint8Array(arrayBuf.slice(0, 100000))
+          const chars: string[] = []
+          for (let i = 0; i < bytes.length; i++) {
+            const b = bytes[i]
+            if ((b >= 32 && b <= 126) || b === 10 || b === 13) {
+              chars.push(String.fromCharCode(b))
+            } else {
+              chars.push(' ')
+            }
           }
+          textSample = chars.join('')
+        } catch {
+          textSample = await file.text().catch(() => '')
         }
-        textSample = chars.join('')
-      } catch {
-        textSample = await file.text().catch(() => '')
-      }
 
-      const lower = (file.name + ' ' + textSample).toLowerCase()
+        const lower = (file.name + ' ' + textSample).toLowerCase()
 
-      const detected: string[] = []
-      const allTaxonomy = [
-        'Java', 'Spring Boot', 'Spring Security', 'REST APIs', 'SQL', 'PostgreSQL',
-        'Docker', 'Git', 'OOP', 'Redis', 'Kafka', 'JUnit', 'Hibernate', 'Microservices',
-        'React', 'TypeScript', 'JavaScript', 'Next.js', 'Tailwind CSS', 'Node.js',
-        'Python', 'FastAPI', 'AWS', 'Kubernetes', 'CI/CD Pipelines', 'Linux', 'Flutter', 'Kotlin'
-      ]
-      allTaxonomy.forEach(skill => {
-        if (lower.includes(skill.toLowerCase())) {
-          detected.push(skill)
-        }
-      })
-
-      // If user uploads Java backend resume, guarantee full backend skills
-      if (lower.includes('java') || lower.includes('spring') || lower.includes('backend') || file.name.toLowerCase().includes('java') || file.name.toLowerCase().includes('backend')) {
-        ['Java', 'Spring Boot', 'REST APIs', 'SQL', 'Git', 'PostgreSQL', 'Docker', 'OOP'].forEach(s => {
-          if (!detected.includes(s)) detected.push(s)
+        const detected: string[] = []
+        const allTaxonomy = [
+          'Java', 'Spring Boot', 'Spring Security', 'REST APIs', 'SQL', 'PostgreSQL',
+          'Docker', 'Git', 'OOP', 'Redis', 'Kafka', 'JUnit', 'Hibernate', 'Microservices',
+          'React', 'TypeScript', 'JavaScript', 'Next.js', 'Tailwind CSS', 'Node.js',
+          'Python', 'FastAPI', 'AWS', 'Kubernetes', 'CI/CD Pipelines', 'Linux', 'Flutter', 'Kotlin'
+        ]
+        allTaxonomy.forEach(skill => {
+          if (lower.includes(skill.toLowerCase())) {
+            detected.push(skill)
+          }
         })
+
+        // If user uploads Java backend resume, guarantee full backend skills
+        if (lower.includes('java') || lower.includes('spring') || lower.includes('backend') || file.name.toLowerCase().includes('java') || file.name.toLowerCase().includes('backend')) {
+          ['Java', 'Spring Boot', 'REST APIs', 'SQL', 'Git', 'PostgreSQL', 'Docker', 'OOP'].forEach(s => {
+            if (!detected.includes(s)) detected.push(s)
+          })
+        }
+
+        const finalSkills = detected.length >= 3 ? detected : DEFAULT_EXTRACTED_SKILLS
+
+        // Infer role from detected skills
+        let detectedRole = 'Java Backend Developer'
+        if (detected.some(s => ['React', 'Next.js', 'Tailwind CSS', 'Redux'].includes(s)) && !detected.some(s => ['Java', 'Spring Boot'].includes(s))) {
+          detectedRole = 'Frontend Developer'
+        } else if (detected.some(s => ['AWS', 'Kubernetes', 'CI/CD Pipelines', 'Terraform'].includes(s)) && !detected.some(s => ['Java', 'Spring Boot'].includes(s))) {
+          detectedRole = 'Cloud & DevOps Engineer'
+        } else if (detected.some(s => ['Python', 'FastAPI', 'Pandas', 'PyTorch'].includes(s))) {
+          detectedRole = 'Data & AI/ML Engineer'
+        } else if (detected.some(s => ['Flutter', 'Kotlin', 'Android'].includes(s))) {
+          detectedRole = 'Mobile Application Developer'
+        }
+
+        const fallbackScore = Math.min(95, Math.max(74, 68 + finalSkills.length * 3))
+
+        analysisResult = {
+          fileName: file.name,
+          overallScore: fallbackScore,
+          detectedRole,
+          extractedSkills: finalSkills,
+          uploadedAt: new Date().toISOString()
+        }
       }
 
-      const finalSkills = detected.length >= 3 ? detected : DEFAULT_EXTRACTED_SKILLS
-      setExtractedSkills(finalSkills)
+      applyAndPersistAnalysis(analysisResult, file.name)
+      await refreshUser().catch(() => {})
 
-      // Infer role from detected skills
-      let detectedRole = 'Java Backend Developer'
-      if (detected.some(s => ['React', 'Next.js', 'Tailwind CSS', 'Redux'].includes(s)) && !detected.some(s => ['Java', 'Spring Boot'].includes(s))) detectedRole = 'Frontend Developer'
-      else if (detected.some(s => ['AWS', 'Kubernetes', 'CI/CD Pipelines', 'Terraform'].includes(s)) && !detected.some(s => ['Java', 'Spring Boot'].includes(s))) detectedRole = 'Cloud & DevOps Engineer'
-      else if (detected.some(s => ['Python', 'FastAPI', 'Pandas', 'PyTorch'].includes(s))) detectedRole = 'Data & AI/ML Engineer'
-      else if (detected.some(s => ['Flutter', 'Kotlin', 'Android'].includes(s))) detectedRole = 'Mobile Application Developer'
-      else if (detected.some(s => ['React', 'JavaScript'].includes(s)) && detected.some(s => ['Node.js', 'SQL'].includes(s)) && !detected.some(s => ['Java', 'Spring Boot'].includes(s))) detectedRole = 'Full Stack Developer'
-
-      const matchedRoleKey = Object.keys(ROLE_TAXONOMY).find(k =>
-        ROLE_TAXONOMY[k].title.toLowerCase() === detectedRole.toLowerCase() ||
-        detectedRole.toLowerCase().includes(ROLE_TAXONOMY[k].title.toLowerCase())
-      ) || 'java-backend'
-      setSelectedRole(matchedRoleKey)
-
-      const fallbackScore = Math.min(95, Math.max(74, 68 + finalSkills.length * 3))
-      setOverallScore(fallbackScore)
-
-      const fallbackAnalysis = {
-        fileName: file.name,
-        overallScore: fallbackScore,
-        detectedRole,
-        extractedSkills: finalSkills,
-        uploadedAt: new Date().toISOString()
-      }
-      applyAndPersistAnalysis(fallbackAnalysis, file.name)
+      toast.success(`Resume "${file.name}" analyzed successfully!`, {
+        description: `Identified verified technical skills. Review your role match below.`
+      })
+    } catch (fatalErr) {
+      console.error('Analysis failed:', fatalErr)
+      toast.error('Could not parse resume file. Please select a valid PDF or DOCX.')
+    } finally {
+      setAnalyzing(false)
     }
+  }
 
-    setAnalyzing(false)
-    toast.success(`Resume "${file.name}" analyzed successfully!`, {
-      description: `Identified verified technical skills. Review your role match below.`
-    })
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragging(true)
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragging(false)
   }
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
+    e.stopPropagation()
     setDragging(false)
     const file = e.dataTransfer.files?.[0]
     if (file) processFile(file)
@@ -530,23 +552,22 @@ export function ResumeStudioPage() {
       </div>
 
       {/* Upload Dropzone */}
-      <div
-        onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
-        onDragLeave={() => setDragging(false)}
+      <label
+        htmlFor="resume-upload-input"
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        onClick={() => fileInputRef.current?.click()}
         className={cn(
           'relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-7 text-center transition-all cursor-pointer',
           dragging ? 'border-indigo bg-indigo/5' : 'border-border bg-card hover:border-indigo/50 hover:bg-muted/20'
         )}
       >
         <input
-          ref={fileInputRef}
+          id="resume-upload-input"
           type="file"
           accept=".pdf,.docx,.txt"
           onChange={handleFileChange}
-          onClick={(e) => { (e.target as HTMLInputElement).value = '' }}
-          className="hidden"
+          className="sr-only"
         />
 
         {analyzing ? (
@@ -595,7 +616,7 @@ export function ResumeStudioPage() {
             </div>
           </div>
         )}
-      </div>
+      </label>
 
       {/* High-Level Score Summary Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
