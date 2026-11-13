@@ -12,6 +12,10 @@ public class SkillGapService {
 
     private final EvidenceRepository evidenceRepository;
 
+    public SkillGapService() {
+        this.evidenceRepository = null;
+    }
+
     public SkillGapService(EvidenceRepository evidenceRepository) {
         this.evidenceRepository = evidenceRepository;
     }
@@ -64,7 +68,7 @@ public class SkillGapService {
         Set<String> partialSkills = new HashSet<>();
         Map<String, Integer> evidenceCountMap = new HashMap<>();
 
-        if (user != null) {
+        if (user != null && evidenceRepository != null) {
             List<EvidenceItem> userEvidence = evidenceRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
             for (EvidenceItem item : userEvidence) {
                 if (item.getLinkedSkills() != null) {
