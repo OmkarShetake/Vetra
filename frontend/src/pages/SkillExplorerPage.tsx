@@ -13,6 +13,7 @@ import {
   MousePointerClick,
   CheckCircle2,
   AlertTriangle,
+  Sparkles,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -348,6 +349,42 @@ const skillNodes: SkillNode[] = [
     roleRelevance: ['AI / Machine Learning Engineer', 'Data Engineer'],
     demandLevel: 93,
   },
+  {
+    id: 'aws',
+    label: 'AWS Cloud',
+    category: 'PLATFORM',
+    x: 820,
+    y: 490,
+    description: 'Amazon Web Services cloud infrastructure including EC2, S3, RDS, Lambda, and IAM security.',
+    prerequisites: ['docker'],
+    relatedSkills: ['Docker', 'Kubernetes', 'CI/CD Pipelines'],
+    roleRelevance: ['Cloud / DevOps Engineer', 'Software Engineer', 'Full Stack Developer'],
+    demandLevel: 94,
+  },
+  {
+    id: 'ci-cd',
+    label: 'CI/CD Pipelines',
+    category: 'TOOL',
+    x: 230,
+    y: 520,
+    description: 'Continuous Integration and Continuous Deployment automation via GitHub Actions, Jenkins, and automated testing.',
+    prerequisites: ['git'],
+    relatedSkills: ['Git', 'Docker', 'Testing'],
+    roleRelevance: ['Cloud / DevOps Engineer', 'Java Backend Developer', 'Software Engineer'],
+    demandLevel: 89,
+  },
+  {
+    id: 'nextjs',
+    label: 'Next.js',
+    category: 'FRAMEWORK',
+    x: 390,
+    y: 40,
+    description: 'Production React framework featuring Server-Side Rendering (SSR), Server Components, and optimized routing.',
+    prerequisites: ['react', 'typescript'],
+    relatedSkills: ['React', 'TypeScript', 'REST APIs'],
+    roleRelevance: ['Frontend Developer', 'Full Stack Developer'],
+    demandLevel: 92,
+  },
 ]
 
 const skillEdges: SkillEdge[] = [
@@ -374,10 +411,23 @@ const skillEdges: SkillEdge[] = [
   { source: 'testing', target: 'spring-boot', type: 'RELATED' },
   // Multi-track edges
   { source: 'typescript', target: 'react', type: 'PREREQUISITE' },
+  { source: 'react', target: 'nextjs', type: 'PREREQUISITE' },
   { source: 'react', target: 'rest-apis', type: 'RELATED' },
   { source: 'docker', target: 'kubernetes', type: 'PREREQUISITE' },
+  { source: 'docker', target: 'aws', type: 'RELATED' },
+  { source: 'kubernetes', target: 'aws', type: 'RELATED' },
+  { source: 'git', target: 'ci-cd', type: 'PREREQUISITE' },
+  { source: 'ci-cd', target: 'docker', type: 'RELATED' },
   { source: 'python', target: 'sql', type: 'RELATED' },
 ]
+
+const TRACKS = [
+  { id: 'all', label: 'All Disciplines' },
+  { id: 'java', label: 'Java Backend' },
+  { id: 'frontend', label: 'Frontend & Full Stack' },
+  { id: 'devops', label: 'DevOps & Cloud' },
+  { id: 'data', label: 'Data & Architecture' },
+] as const
 
 const VIEWBOX_W = 900
 const VIEWBOX_H = 600
@@ -390,6 +440,7 @@ const MAX_SCALE = 2.5
 
 export function SkillExplorerPage() {
   const [searchQuery, setSearchQuery] = useState('')
+  const [selectedTrack, setSelectedTrack] = useState<string>('all')
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
   const [scale, setScale] = useState(1)
   const [tx, setTx] = useState(0)
@@ -424,12 +475,40 @@ export function SkillExplorerPage() {
   )
 
   const matchedNodeIds = useMemo(() => {
-    if (!searchQuery.trim()) return new Set(skillNodes.map((n) => n.id))
-    const q = searchQuery.toLowerCase()
+    const q = searchQuery.toLowerCase().trim()
     return new Set(
-      skillNodes.filter((n) => n.label.toLowerCase().includes(q)).map((n) => n.id),
+      skillNodes.filter((n) => {
+        const matchesQuery = !q || n.label.toLowerCase().includes(q)
+        if (!matchesQuery) return false
+
+        if (selectedTrack === 'java') {
+          return (
+            n.roleRelevance.some(r => r.toLowerCase().includes('java') || r.toLowerCase().includes('spring')) ||
+            ['java', 'oop', 'collections', 'spring-framework', 'spring-boot', 'rest-apis', 'postgresql', 'sql', 'jdbc', 'multithreading', 'exception-handling', 'testing'].includes(n.id)
+          )
+        }
+        if (selectedTrack === 'frontend') {
+          return (
+            n.roleRelevance.some(r => r.toLowerCase().includes('frontend') || r.toLowerCase().includes('full stack')) ||
+            ['react', 'typescript', 'nextjs', 'rest-apis', 'git', 'testing'].includes(n.id)
+          )
+        }
+        if (selectedTrack === 'devops') {
+          return (
+            n.roleRelevance.some(r => r.toLowerCase().includes('devops') || r.toLowerCase().includes('cloud')) ||
+            ['docker', 'kubernetes', 'aws', 'ci-cd', 'git', 'testing'].includes(n.id)
+          )
+        }
+        if (selectedTrack === 'data') {
+          return (
+            n.category === 'DATABASE' ||
+            ['kafka', 'postgresql', 'sql', 'redis', 'python', 'jdbc'].includes(n.id)
+          )
+        }
+        return true
+      }).map((n) => n.id)
     )
-  }, [searchQuery])
+  }, [searchQuery, selectedTrack])
 
   const zoomBy = useCallback(
     (factor: number) => {
@@ -503,41 +582,69 @@ export function SkillExplorerPage() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div>
-        <div className="flex items-center gap-2">
-          <Network className="h-6 w-6 text-violet" />
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Skill Explorer</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <Network className="h-6 w-6 text-violet" />
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Skill Explorer</h1>
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Explore how modern technologies connect. Click any node to inspect prerequisites, related skills, and market demand.
+          </p>
         </div>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Explore how technologies connect. Click a node to see prerequisites, related skills, and
-          demand.
-        </p>
+        <div className="flex items-center gap-2">
+          <Badge variant="teal" className="gap-1.5 py-1 text-xs font-semibold shadow-xs">
+            <Sparkles className="h-3.5 w-3.5" />
+            Live Taxonomy Database
+          </Badge>
+          <Badge variant="outline" className="border-indigo/30 bg-indigo/10 text-indigo py-1 text-xs font-semibold">
+            Interactive DAG Engine
+          </Badge>
+        </div>
       </div>
 
-      {/* Search */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative w-full sm:max-w-md">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search skills to highlight…"
-            className="pl-9"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+      {/* Search & Track Filters */}
+      <div className="space-y-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative w-full sm:max-w-md">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search skills to highlight…"
+              className="pl-9"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant={highlightMySkills ? "teal" : "outline"}
+              size="sm"
+              onClick={() => setHighlightMySkills(h => !h)}
+              className="gap-1.5 text-xs font-semibold shadow-xs"
+            >
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              {highlightMySkills ? "My Verified Skills: ON" : "Overlay My Skills"}
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant={highlightMySkills ? "teal" : "outline"}
-            size="sm"
-            onClick={() => setHighlightMySkills(h => !h)}
-            className="gap-1.5 text-xs font-semibold shadow-xs"
-          >
-            <CheckCircle2 className="h-3.5 w-3.5" />
-            {highlightMySkills ? "My Verified Skills: ON" : "Overlay My Skills"}
-          </Button>
-          <Badge variant="outline" className="border-indigo/30 bg-indigo/10 text-indigo text-xs">
-            Interactive DAG
-          </Badge>
+
+        {/* Tracks Selector */}
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-xs font-medium text-muted-foreground mr-1">Discipline:</span>
+          {TRACKS.map(t => (
+            <Button
+              key={t.id}
+              variant={selectedTrack === t.id ? "secondary" : "ghost"}
+              size="sm"
+              className={cn(
+                "h-7 text-xs px-3 rounded-full font-medium transition-all",
+                selectedTrack === t.id && "bg-indigo/15 text-indigo font-semibold border border-indigo/30 shadow-xs"
+              )}
+              onClick={() => setSelectedTrack(t.id)}
+            >
+              {t.label}
+            </Button>
+          ))}
         </div>
       </div>
 
@@ -550,7 +657,7 @@ export function SkillExplorerPage() {
               <div>
                 <CardTitle className="text-base">Skill Graph</CardTitle>
                 <CardDescription className="text-xs">
-                  Java Backend learning path — drag to pan, click nodes to inspect
+                  {TRACKS.find(t => t.id === selectedTrack)?.label || 'All Disciplines'} · Interactive DAG (drag to pan, click nodes to inspect)
                 </CardDescription>
               </div>
               <div className="flex items-center gap-1">

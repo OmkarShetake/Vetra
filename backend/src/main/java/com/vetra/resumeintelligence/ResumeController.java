@@ -49,7 +49,8 @@ public class ResumeController {
     @Operation(summary = "Use Google Gemini AI to rewrite a weak resume bullet point into an impact statement")
     public ResponseEntity<ApiResponse<String>> rewriteBullet(@RequestBody java.util.Map<String, String> body) {
         String bulletText = body.getOrDefault("bulletText", "");
-        String rewritten = resumeService.rewriteBulletWithAi(bulletText);
+        String targetRole = body.getOrDefault("targetRole", "Software Engineer");
+        String rewritten = resumeService.rewriteBulletWithAi(bulletText, targetRole);
         return ResponseEntity.ok(ApiResponse.ok("Bullet rewritten with Gemini AI", rewritten));
     }
 }

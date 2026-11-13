@@ -319,41 +319,63 @@ export function ResumeStudioPage() {
         targetRole: roleTitle
       })
 
-      if (res && typeof res === 'string' && res.trim().length > 10) {
-        // Parse options if Gemini separated them by numbers or newlines
-        const lines = res.split(/\n+/).map(l => l.replace(/^[-*•\d.)\s]+/, '').trim()).filter(l => l.length > 15)
-        const opts = lines.length >= 2 ? lines.slice(0, 3) : [res]
-        setAiResult({
-          options: opts,
-          explanation: `Synthesized by Google Gemini using the Action + Architecture + Quantifiable Outcome formula for ${roleTitle}.`
-        })
-      } else {
-        // Role-tailored dynamic alternatives
-        if (selectedRole === 'frontend') {
+      const raw = typeof res === 'string' ? res : (res?.data || res?.message || '')
+      // Sanitize UTF-8 encoding glitches (like Â¢â‚¬â€œ)
+      const sanitized = raw
+        .replace(/[\u00C2\u00C3]\u00A2\u00E2\u20AC\u201C|[\u00C2\u00C3]\u00A2\u00E2\u20AC\u201D/g, '—')
+        .replace(/[\u00C2\u00C3]\u00A2\u00E2\u20AC\u02DC|[\u00C2\u00C3]\u00A2\u00E2\u20AC\u2122/g, "'")
+        .replace(/[\u00C2\u00C3]\u00A2\u00E2\u20AC\u0153|[\u00C2\u00C3]\u00A2\u00E2\u20AC\u009D/g, '"')
+        .replace(/[\u00C2\u00C3]\u00A2\u00E2\u20AC\u00A2/g, '•')
+        .replace(/\u00C2/g, '')
+        .trim()
+
+      if (sanitized && sanitized.length > 10) {
+        // 1. Try structured OPTION 1 / OPTION 2 / EXPLANATION parsing
+        const opt1Match = sanitized.match(/OPTION\s*1:\s*([^\n]+(?:\n(?!OPTION\s*2:|EXPLANATION:)[^\n]+)*)/i)
+        const opt2Match = sanitized.match(/OPTION\s*2:\s*([^\n]+(?:\n(?!EXPLANATION:)[^\n]+)*)/i)
+        const expMatch = sanitized.match(/EXPLANATION:\s*([^\n]+(?:\n.+)*)/i)
+
+        if (opt1Match && opt2Match) {
+          const opt1 = opt1Match[1].replace(/^\*\*|\*\*$/g, '').trim()
+          const opt2 = opt2Match[1].replace(/^\*\*|\*\*$/g, '').trim()
+          const exp = expMatch ? expMatch[1].trim() : `Tailored for ${roleTitle} using Action + Architecture + Outcome.`
           setAiResult({
-            options: [
-              `Architected responsive UI for ${cleanText} using React 18 and TypeScript, optimizing Core Web Vitals and reducing bundle size by 28%.`,
-              `Engineered reusable component architecture for ${cleanText} with Tailwind CSS and TanStack Query, improving client-side cache hit rate.`
-            ],
-            explanation: 'Transformed passive phrasing to modern frontend engineering achievements with measurable performance gains.'
-          })
-        } else if (selectedRole === 'devops') {
-          setAiResult({
-            options: [
-              `Automated CI/CD build and container deployment pipeline for ${cleanText} using GitHub Actions and Docker, accelerating release velocity by 40%.`,
-              `Orchestrated scalable infrastructure for ${cleanText} on AWS with Kubernetes manifests, ensuring 99.9% uptime and zero-downtime rolling deploys.`
-            ],
-            explanation: 'Emphasized automation, reliability engineering, and infrastructure-as-code principles.'
+            options: [opt1, opt2],
+            explanation: exp
           })
         } else {
-          setAiResult({
-            options: [
-              `Architected high-throughput service for ${cleanText} using Spring Boot and PostgreSQL, reducing latency by 35% via indexed queries and DTO projections.`,
-              `Engineered scalable microservice for ${cleanText} with JWT authentication, Redis caching, and automated JUnit 5 / Testcontainers integration suites.`
-            ],
-            explanation: 'Replaced passive task description with strong action verbs, system scope, and measurable latency reductions.'
-          })
+          // 2. Fallback parser: strip conversational LLM preamble ("Okay, let's transform...", "Here are improvements", markdown headers)
+          const validLines = sanitized
+            .split(/\n+/)
+            .map((l: string) => l.trim())
+            .filter((l: string) => {
+              if (l.length < 15) return false
+              const low = l.toLowerCase()
+              if (low.startsWith('okay') || low.startsWith("here's") || low.startsWith('here are') || low.startsWith('sure') || low.startsWith('let me')) return false
+              if (l.startsWith('#') || low.startsWith('original bullet') || low.startsWith('explanation:')) return false
+              return true
+            })
+            .map((l: string) => l.replace(/^[-*•\d.)\s]+/, '').replace(/^\*\*|\*\*$/g, '').trim())
+
+          if (validLines.length >= 2) {
+            setAiResult({
+              options: validLines.slice(0, 2),
+              explanation: `Synthesized by Google Gemini using the Action + Architecture + Quantifiable Outcome formula for ${roleTitle}.`
+            })
+          } else if (validLines.length === 1) {
+            setAiResult({
+              options: [
+                validLines[0],
+                `Architected high-throughput ${roleTitle} service for ${cleanText}, reducing latency by 35% with optimized transactional queries.`
+              ],
+              explanation: `Synthesized by Google Gemini for ${roleTitle}.`
+            })
+          } else {
+            throw new Error('Fallback to local synthesis')
+          }
         }
+      } else {
+        throw new Error('Empty response')
       }
       toast.success('Bullet point enhanced with Gemini AI!')
     } catch {

@@ -347,14 +347,22 @@ public class ResumeService {
     }
 
     public String rewriteBulletWithAi(String bulletText) {
+        return rewriteBulletWithAi(bulletText, "Software Engineer");
+    }
+
+    public String rewriteBulletWithAi(String bulletText, String targetRole) {
         if (bulletText == null || bulletText.isBlank()) {
-            return "Engineered and optimized backend services, improving response latency and reliability.";
+            return "OPTION 1: Engineered and optimized backend services, improving response latency and reliability.\nOPTION 2: Architected high-throughput API services with automated integration testing.\nEXPLANATION: Replaced passive phrasing with action verbs and quantifiable system improvements.";
         }
+        String role = (targetRole != null && !targetRole.isBlank()) ? targetRole : "Software Engineer";
         if (geminiService.isConfigured()) {
-            String aiResult = geminiService.rewriteBulletPoint(bulletText, "Backend Software Engineer");
+            String aiResult = geminiService.rewriteBulletPoint(bulletText, role);
             if (aiResult != null && !aiResult.isBlank()) return aiResult;
         }
-        return "Architected and delivered " + bulletText.trim()
-            + ", establishing automated unit test coverage and decreasing execution latency by 35%.";
+        return "OPTION 1: Architected and delivered " + bulletText.trim()
+            + ", establishing automated unit test coverage and decreasing execution latency by 35%.\n"
+            + "OPTION 2: Engineered scalable " + role + " services for " + bulletText.trim()
+            + ", standardizing API contracts and enhancing throughput by 40%.\n"
+            + "EXPLANATION: Replaced passive task description with strong action verbs, system scope, and measurable latency reductions.";
     }
 }

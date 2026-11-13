@@ -80,14 +80,23 @@ public class GeminiService {
 
         String role = (targetRole != null && !targetRole.isBlank()) ? targetRole : "Software Engineer";
         String prompt = """
-            You are a senior software engineering career coach and technical recruiter for %s roles.
-            Rewrite this resume bullet point using the formula: Action Verb + Architecture/Tool + Quantifiable Outcome.
-            Do not fabricate statistics or false claims; suggest how to frame the technical scope cleanly.
+            You are an elite technical recruiter and software engineering leader specializing in %s hiring.
+            Your task is to rewrite a resume bullet point using the industry-standard formula:
+            Action Verb + Architecture/Tool + Quantifiable Outcome.
             
-            Original bullet:
-            \"%s\"
+            STRICT RULES:
+            - Do NOT include any conversational introduction, greetings, or polite chatter (e.g. NEVER say "Okay, let's transform...", "Here are improvements...").
+            - Do NOT include any markdown section headers (no "### Improved Alternatives" or similar).
+            - Do NOT invent fake company statistics or ungrounded credentials.
+            - Provide EXACTLY 2 distinct, impactful alternatives followed by a 1-sentence explanation.
+            - Format your response EXACTLY as follows:
             
-            Provide 2 improved alternatives and a brief explanation why.
+            OPTION 1: <First improved bullet using strong action verb and technical impact>
+            OPTION 2: <Second improved bullet emphasizing architecture, scale, or quality>
+            EXPLANATION: <One concise sentence explaining why these changes improve ATS score and recruiter impression>
+
+            Original candidate bullet:
+            "%s"
             """.formatted(role, bulletPoint);
 
         return callGemini(prompt);
