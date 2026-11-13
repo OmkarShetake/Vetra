@@ -109,7 +109,7 @@ public class SkillGapService {
             ? req.targetRole()
             : (user != null && user.getTargetRole() != null ? user.getTargetRole() : "Java Backend Developer");
 
-        List<RoleRequirement> requirements = ROLE_TAXONOMY.getOrDefault(role, ROLE_TAXONOMY.get("Java Backend Developer"));
+        List<RoleRequirement> requirements = getOrSynthesizeRequirements(role);
 
         // Build dynamic user evidence set from database and request skills
         Set<String> verifiedSkills = new HashSet<>();
@@ -217,5 +217,77 @@ public class SkillGapService {
             items,
             summary
         );
+    }
+
+    private List<RoleRequirement> getOrSynthesizeRequirements(String role) {
+        if (role == null || role.isBlank()) {
+            return ROLE_TAXONOMY.get("Java Backend Developer");
+        }
+        String cleanRole = role.trim();
+        for (Map.Entry<String, List<RoleRequirement>> entry : ROLE_TAXONOMY.entrySet()) {
+            if (entry.getKey().equalsIgnoreCase(cleanRole)) {
+                return entry.getValue();
+            }
+        }
+        return synthesizeCustomRoleRequirements(cleanRole);
+    }
+
+    private List<RoleRequirement> synthesizeCustomRoleRequirements(String role) {
+        String lower = role.toLowerCase();
+        List<RoleRequirement> list = new ArrayList<>();
+
+        if (lower.contains("data") || lower.contains("etl") || lower.contains("big data") || lower.contains("analytics")) {
+            list.add(new RoleRequirement("Python", "CRITICAL", List.of(), "Core language for data pipelines, scripting, and transformation."));
+            list.add(new RoleRequirement("SQL", "CRITICAL", List.of(), "Advanced data extraction, indexing, and relational data warehousing."));
+            list.add(new RoleRequirement("Apache Spark / PySpark", "CRITICAL", List.of("Python", "SQL"), "Distributed cluster data processing."));
+            list.add(new RoleRequirement("Apache Kafka", "CRITICAL", List.of(), "Real-time distributed event streaming and message queuing."));
+            list.add(new RoleRequirement("Airflow", "IMPORTANT", List.of("Python"), "Workflow orchestration and scheduled DAG automation."));
+            list.add(new RoleRequirement("Snowflake / BigQuery", "IMPORTANT", List.of("SQL"), "Cloud analytical data warehouse storage."));
+            list.add(new RoleRequirement("Docker", "IMPORTANT", List.of(), "Containerized pipeline execution."));
+            list.add(new RoleRequirement("Git", "IMPORTANT", List.of(), "Version control for data transformation scripts."));
+            return list;
+        }
+
+        if (lower.contains("go") || lower.contains("golang")) {
+            list.add(new RoleRequirement("Go (Golang)", "CRITICAL", List.of(), "Idiomatic Go syntax, standard library, and tooling."));
+            list.add(new RoleRequirement("Concurrency (Goroutines)", "CRITICAL", List.of("Go (Golang)"), "High-concurrency lightweight thread scheduling."));
+            list.add(new RoleRequirement("REST & gRPC APIs", "CRITICAL", List.of("Go (Golang)"), "High-performance inter-microservice communication."));
+            list.add(new RoleRequirement("SQL & PostgreSQL", "CRITICAL", List.of(), "Relational data persistence and connection pooling."));
+            list.add(new RoleRequirement("Docker", "IMPORTANT", List.of(), "Containerization for Go binaries."));
+            list.add(new RoleRequirement("Kubernetes", "IMPORTANT", List.of("Docker"), "Cloud-native container orchestration."));
+            list.add(new RoleRequirement("Git", "IMPORTANT", List.of(), "Distributed version tracking."));
+            return list;
+        }
+
+        if (lower.contains("security") || lower.contains("cyber")) {
+            list.add(new RoleRequirement("Linux Systems", "CRITICAL", List.of(), "Operating system internals, permissions, and bash shell."));
+            list.add(new RoleRequirement("Python Scripting", "CRITICAL", List.of(), "Automated vulnerability scanning and security tooling."));
+            list.add(new RoleRequirement("Networking & TCP/IP", "CRITICAL", List.of(), "Firewalls, packet inspection, and secure transport."));
+            list.add(new RoleRequirement("OWASP Top 10", "CRITICAL", List.of(), "Web application vulnerability remediation and defense."));
+            list.add(new RoleRequirement("Cryptography & PKI", "IMPORTANT", List.of(), "Encryption, TLS certs, hashing, and signature validation."));
+            list.add(new RoleRequirement("Cloud Security (AWS)", "IMPORTANT", List.of("Linux Systems"), "IAM policies, VPC isolation, and audit compliance."));
+            list.add(new RoleRequirement("Git", "IMPORTANT", List.of(), "Secure code review and commit hygiene."));
+            return list;
+        }
+
+        if (lower.contains("qa") || lower.contains("test") || lower.contains("automation")) {
+            list.add(new RoleRequirement("Test Automation (Playwright/Selenium)", "CRITICAL", List.of(), "End-to-end automated UI and regression testing."));
+            list.add(new RoleRequirement("Java / Python / TypeScript", "CRITICAL", List.of(), "Programming language for test script engineering."));
+            list.add(new RoleRequirement("REST API Testing", "CRITICAL", List.of(), "Validating backend contracts, status codes, and payloads."));
+            list.add(new RoleRequirement("CI/CD Integration", "IMPORTANT", List.of(), "Running automated test suites on pull requests."));
+            list.add(new RoleRequirement("Git", "IMPORTANT", List.of(), "Version control for test repositories."));
+            list.add(new RoleRequirement("Docker", "BENEFICIAL", List.of(), "Containerized headless test execution."));
+            return list;
+        }
+
+        // Novel custom role dynamic synthesis
+        list.add(new RoleRequirement(role + " Core Competencies", "CRITICAL", List.of(), "Fundamental domain knowledge and core syntax for " + role + "."));
+        list.add(new RoleRequirement("System Architecture & Design", "CRITICAL", List.of(), "Architectural patterns and structural decomposition for " + role + "."));
+        list.add(new RoleRequirement("Data Modeling & Relational Storage", "CRITICAL", List.of(), "Database querying, data integrity, and storage design."));
+        list.add(new RoleRequirement("API & Inter-Service Communication", "IMPORTANT", List.of(), "Stateless API contracts and service protocols."));
+        list.add(new RoleRequirement("Automated Unit & Integration Testing", "IMPORTANT", List.of(), "Test suites ensuring regression safety."));
+        list.add(new RoleRequirement("Git & Version Control", "IMPORTANT", List.of(), "Branch workflows and commit hygiene."));
+        list.add(new RoleRequirement("Containerization & Cloud Infrastructure", "IMPORTANT", List.of(), "Deployment environments and scalable runtime."));
+        return list;
     }
 }

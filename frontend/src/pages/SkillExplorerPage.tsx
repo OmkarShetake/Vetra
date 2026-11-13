@@ -15,7 +15,8 @@ import {
   AlertTriangle,
   Sparkles,
   Briefcase,
-  Layers2,
+  Plus,
+  ArrowRight,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuth } from '@/hooks/useAuth'
@@ -33,42 +34,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import { cn, formatPercent } from '@/lib/utils'
 import type { SkillCategory } from '@/types'
-
-// ---------------------------------------------------------------------------
-// Types & Taxonomy definitions
-// ---------------------------------------------------------------------------
-
-interface SkillNode {
-  id: string
-  label: string
-  category: SkillCategory
-  x: number
-  y: number
-  description: string
-  prerequisites: string[]
-  relatedSkills: string[]
-  roleRelevance: string[]
-  demandLevel: number
-}
-
-interface SkillEdge {
-  source: string
-  target: string
-  type: 'PREREQUISITE' | 'RELATED' | 'REQUIRES'
-}
-
-export const AVAILABLE_ROLES = [
-  'Java Backend Developer',
-  'Frontend Developer',
-  'Full Stack Developer',
-  'Cloud / DevOps Engineer',
-  'AI / Machine Learning Engineer',
-  'Software Engineer',
-  'Spring Boot Developer',
-  'Mobile Developer (Android/Flutter)',
-] as const
+import {
+  PRESET_ROLES,
+  synthesizeRoleGraph,
+  type SkillNode,
+  type SkillEdge,
+} from '@/lib/roleTaxonomy'
 
 const CATEGORY_COLORS: Record<SkillCategory, string> = {
   LANGUAGE: '#2563EB', // indigo
@@ -98,1325 +79,72 @@ const LEGEND_ITEMS: { category: SkillCategory; label: string }[] = [
   { category: 'CONCEPT', label: 'Concept' },
 ]
 
-// ---------------------------------------------------------------------------
-// Role-Specific DAG Graphs (Tailored to candidate roles)
-// ---------------------------------------------------------------------------
-
-const ROLE_GRAPHS: Record<string, { nodes: SkillNode[]; edges: SkillEdge[] }> = {
-  'Java Backend Developer': {
-    nodes: [
-      {
-        id: 'java',
-        label: 'Java',
-        category: 'LANGUAGE',
-        x: 120,
-        y: 300,
-        description: 'Core Java programming language: syntax, OOP, Collections, JVM memory model, and concurrency.',
-        prerequisites: [],
-        relatedSkills: ['OOP', 'Collections', 'JDBC', 'Testing'],
-        roleRelevance: ['Java Backend Developer', 'Spring Boot Developer'],
-        demandLevel: 94,
-      },
-      {
-        id: 'git',
-        label: 'Git',
-        category: 'TOOL',
-        x: 120,
-        y: 150,
-        description: 'Distributed version control, branch workflows, pull requests, and commit hygiene.',
-        prerequisites: [],
-        relatedSkills: ['Java', 'CI/CD Pipelines'],
-        roleRelevance: ['Java Backend Developer', 'Software Engineer'],
-        demandLevel: 90,
-      },
-      {
-        id: 'sql',
-        label: 'SQL',
-        category: 'DATABASE',
-        x: 120,
-        y: 460,
-        description: 'Relational data modeling, ACID transactions, complex JOINs, indexing, and query optimization.',
-        prerequisites: [],
-        relatedSkills: ['JDBC', 'PostgreSQL', 'Hibernate'],
-        roleRelevance: ['Java Backend Developer', 'Full Stack Developer'],
-        demandLevel: 92,
-      },
-      {
-        id: 'oop',
-        label: 'OOP',
-        category: 'CONCEPT',
-        x: 280,
-        y: 220,
-        description: 'Object-oriented programming principles: encapsulation, inheritance, polymorphism, and abstraction.',
-        prerequisites: ['java'],
-        relatedSkills: ['Java', 'Spring Framework'],
-        roleRelevance: ['Java Backend Developer'],
-        demandLevel: 88,
-      },
-      {
-        id: 'collections',
-        label: 'Collections',
-        category: 'CONCEPT',
-        x: 280,
-        y: 330,
-        description: 'Java Collections Framework: List, Set, Map implementations, time complexity, and memory characteristics.',
-        prerequisites: ['java'],
-        relatedSkills: ['Java', 'JDBC'],
-        roleRelevance: ['Java Backend Developer'],
-        demandLevel: 85,
-      },
-      {
-        id: 'jdbc',
-        label: 'JDBC',
-        category: 'CONCEPT',
-        x: 310,
-        y: 470,
-        description: 'Java Database Connectivity API for executing SQL statements and managing database connections.',
-        prerequisites: ['java', 'sql'],
-        relatedSkills: ['SQL', 'Hibernate'],
-        roleRelevance: ['Java Backend Developer'],
-        demandLevel: 80,
-      },
-      {
-        id: 'testing',
-        label: 'JUnit 5 & Mockito',
-        category: 'TOOL',
-        x: 320,
-        y: 120,
-        description: 'Automated unit and integration testing frameworks for Java backend microservices.',
-        prerequisites: ['java'],
-        relatedSkills: ['Spring Boot'],
-        roleRelevance: ['Java Backend Developer', 'Software Engineer'],
-        demandLevel: 85,
-      },
-      {
-        id: 'spring-framework',
-        label: 'Spring Framework',
-        category: 'FRAMEWORK',
-        x: 480,
-        y: 260,
-        description: 'Core Spring: Dependency Injection (DI), Inversion of Control (IoC), and Aspect-Oriented Programming (AOP).',
-        prerequisites: ['oop'],
-        relatedSkills: ['Spring Boot'],
-        roleRelevance: ['Java Backend Developer', 'Spring Boot Developer'],
-        demandLevel: 92,
-      },
-      {
-        id: 'hibernate',
-        label: 'Hibernate / JPA',
-        category: 'FRAMEWORK',
-        x: 480,
-        y: 420,
-        description: 'Object-Relational Mapping (ORM) and Java Persistence API for enterprise database persistence.',
-        prerequisites: ['jdbc', 'sql'],
-        relatedSkills: ['Spring Boot', 'PostgreSQL'],
-        roleRelevance: ['Java Backend Developer'],
-        demandLevel: 89,
-      },
-      {
-        id: 'postgresql',
-        label: 'PostgreSQL',
-        category: 'DATABASE',
-        x: 480,
-        y: 530,
-        description: 'Production open-source relational database with advanced JSONB, indexing, and connection pooling.',
-        prerequisites: ['sql'],
-        relatedSkills: ['Hibernate', 'Spring Boot'],
-        roleRelevance: ['Java Backend Developer'],
-        demandLevel: 88,
-      },
-      {
-        id: 'spring-boot',
-        label: 'Spring Boot',
-        category: 'FRAMEWORK',
-        x: 650,
-        y: 290,
-        description: 'Convention-over-configuration enterprise microservices platform, embedded servers, and production actuators.',
-        prerequisites: ['spring-framework'],
-        relatedSkills: ['REST APIs', 'Spring Security', 'Docker'],
-        roleRelevance: ['Java Backend Developer', 'Spring Boot Developer'],
-        demandLevel: 96,
-      },
-      {
-        id: 'rest-apis',
-        label: 'REST APIs',
-        category: 'CONCEPT',
-        x: 750,
-        y: 180,
-        description: 'RESTful architectural design, HTTP status codes, stateless communication, and OpenAPI contracts.',
-        prerequisites: ['spring-boot'],
-        relatedSkills: ['Spring Security', 'Kafka'],
-        roleRelevance: ['Java Backend Developer'],
-        demandLevel: 95,
-      },
-      {
-        id: 'spring-security',
-        label: 'Spring Security & JWT',
-        category: 'FRAMEWORK',
-        x: 770,
-        y: 330,
-        description: 'Authentication, RBAC authorization, CSRF protection, and stateless JWT token verification.',
-        prerequisites: ['spring-boot'],
-        relatedSkills: ['REST APIs'],
-        roleRelevance: ['Java Backend Developer'],
-        demandLevel: 91,
-      },
-      {
-        id: 'docker',
-        label: 'Docker',
-        category: 'TOOL',
-        x: 650,
-        y: 480,
-        description: 'Containerization, multi-stage Dockerfiles, Docker Compose networking, and cloud deployment.',
-        prerequisites: ['git'],
-        relatedSkills: ['Spring Boot', 'PostgreSQL'],
-        roleRelevance: ['Java Backend Developer', 'DevOps'],
-        demandLevel: 89,
-      },
-      {
-        id: 'redis',
-        label: 'Redis',
-        category: 'DATABASE',
-        x: 820,
-        y: 460,
-        description: 'In-memory distributed key-value cache, session store, rate limiting, and pub/sub messaging.',
-        prerequisites: ['spring-boot'],
-        relatedSkills: ['Spring Boot'],
-        roleRelevance: ['Java Backend Developer'],
-        demandLevel: 84,
-      },
-      {
-        id: 'kafka',
-        label: 'Kafka',
-        category: 'TOOL',
-        x: 820,
-        y: 260,
-        description: 'Distributed event streaming platform for high-throughput decoupled microservice architectures.',
-        prerequisites: ['spring-boot'],
-        relatedSkills: ['REST APIs'],
-        roleRelevance: ['Java Backend Developer'],
-        demandLevel: 86,
-      },
-    ],
-    edges: [
-      { source: 'java', target: 'oop', type: 'PREREQUISITE' },
-      { source: 'java', target: 'collections', type: 'PREREQUISITE' },
-      { source: 'java', target: 'testing', type: 'PREREQUISITE' },
-      { source: 'java', target: 'jdbc', type: 'REQUIRES' },
-      { source: 'sql', target: 'jdbc', type: 'PREREQUISITE' },
-      { source: 'oop', target: 'spring-framework', type: 'PREREQUISITE' },
-      { source: 'jdbc', target: 'hibernate', type: 'PREREQUISITE' },
-      { source: 'sql', target: 'postgresql', type: 'PREREQUISITE' },
-      { source: 'spring-framework', target: 'spring-boot', type: 'PREREQUISITE' },
-      { source: 'spring-boot', target: 'rest-apis', type: 'PREREQUISITE' },
-      { source: 'spring-boot', target: 'spring-security', type: 'PREREQUISITE' },
-      { source: 'spring-boot', target: 'hibernate', type: 'RELATED' },
-      { source: 'spring-boot', target: 'docker', type: 'RELATED' },
-      { source: 'spring-boot', target: 'redis', type: 'RELATED' },
-      { source: 'spring-boot', target: 'kafka', type: 'RELATED' },
-      { source: 'git', target: 'testing', type: 'RELATED' },
-    ],
-  },
-
-  'Frontend Developer': {
-    nodes: [
-      {
-        id: 'html-css',
-        label: 'HTML5 & CSS3',
-        category: 'CONCEPT',
-        x: 120,
-        y: 200,
-        description: 'Semantic markup, modern layout models (Flexbox, CSS Grid), responsive design, and accessibility (a11y).',
-        prerequisites: [],
-        relatedSkills: ['Tailwind CSS', 'JavaScript'],
-        roleRelevance: ['Frontend Developer'],
-        demandLevel: 92,
-      },
-      {
-        id: 'javascript',
-        label: 'JavaScript ES6+',
-        category: 'LANGUAGE',
-        x: 120,
-        y: 350,
-        description: 'Modern JavaScript: closures, asynchronous event loop, Promises, async/await, and DOM manipulation.',
-        prerequisites: [],
-        relatedSkills: ['TypeScript', 'React'],
-        roleRelevance: ['Frontend Developer'],
-        demandLevel: 96,
-      },
-      {
-        id: 'git',
-        label: 'Git & GitHub',
-        category: 'TOOL',
-        x: 120,
-        y: 500,
-        description: 'Branch management, feature branches, pull requests, code reviews, and merge conflict resolution.',
-        prerequisites: [],
-        relatedSkills: ['CI/CD'],
-        roleRelevance: ['Frontend Developer'],
-        demandLevel: 89,
-      },
-      {
-        id: 'typescript',
-        label: 'TypeScript',
-        category: 'LANGUAGE',
-        x: 290,
-        y: 280,
-        description: 'Static type checking, interfaces, generics, utility types, and strict type safety for enterprise apps.',
-        prerequisites: ['javascript'],
-        relatedSkills: ['React', 'Next.js'],
-        roleRelevance: ['Frontend Developer'],
-        demandLevel: 94,
-      },
-      {
-        id: 'tailwind',
-        label: 'Tailwind CSS',
-        category: 'FRAMEWORK',
-        x: 290,
-        y: 150,
-        description: 'Utility-first modern CSS framework, responsive design tokens, and dark-mode styling systems.',
-        prerequisites: ['html-css'],
-        relatedSkills: ['React'],
-        roleRelevance: ['Frontend Developer'],
-        demandLevel: 90,
-      },
-      {
-        id: 'dom-apis',
-        label: 'Browser APIs & Fetch',
-        category: 'CONCEPT',
-        x: 290,
-        y: 430,
-        description: 'HTTP requests, REST endpoints, WebSockets, LocalStorage, and browser security contexts (CORS).',
-        prerequisites: ['javascript'],
-        relatedSkills: ['REST APIs'],
-        roleRelevance: ['Frontend Developer'],
-        demandLevel: 86,
-      },
-      {
-        id: 'react',
-        label: 'React 18',
-        category: 'FRAMEWORK',
-        x: 480,
-        y: 290,
-        description: 'Component architecture, Hooks (useState, useEffect, useMemo), Virtual DOM, and Concurrent mode.',
-        prerequisites: ['javascript', 'typescript'],
-        relatedSkills: ['Next.js', 'State Management'],
-        roleRelevance: ['Frontend Developer'],
-        demandLevel: 97,
-      },
-      {
-        id: 'rest-apis',
-        label: 'REST & GraphQL APIs',
-        category: 'CONCEPT',
-        x: 480,
-        y: 150,
-        description: 'Consuming backend API contracts, TanStack React Query, data fetching caching, and mutation state.',
-        prerequisites: ['dom-apis'],
-        relatedSkills: ['React'],
-        roleRelevance: ['Frontend Developer'],
-        demandLevel: 92,
-      },
-      {
-        id: 'testing',
-        label: 'Vitest / React Testing Library',
-        category: 'TOOL',
-        x: 480,
-        y: 450,
-        description: 'Component testing, DOM rendering assertions, user event simulations, and test coverage suites.',
-        prerequisites: ['react'],
-        relatedSkills: ['React'],
-        roleRelevance: ['Frontend Developer'],
-        demandLevel: 82,
-      },
-      {
-        id: 'state-management',
-        label: 'Zustand / Redux Toolkit',
-        category: 'FRAMEWORK',
-        x: 670,
-        y: 220,
-        description: 'Global client-side application state, persistent stores, unidirectional data flow, and selectors.',
-        prerequisites: ['react'],
-        relatedSkills: ['Next.js'],
-        roleRelevance: ['Frontend Developer'],
-        demandLevel: 88,
-      },
-      {
-        id: 'nextjs',
-        label: 'Next.js & App Router',
-        category: 'FRAMEWORK',
-        x: 670,
-        y: 360,
-        description: 'React Server Components (RSC), SSR, Static Site Generation (SSG), and Edge API routes.',
-        prerequisites: ['react', 'typescript'],
-        relatedSkills: ['Performance'],
-        roleRelevance: ['Frontend Developer'],
-        demandLevel: 93,
-      },
-      {
-        id: 'performance',
-        label: 'Core Web Vitals',
-        category: 'CONCEPT',
-        x: 670,
-        y: 490,
-        description: 'LCP, FID, CLS metrics optimization, code-splitting, lazy loading, and modern bundle optimization.',
-        prerequisites: ['react'],
-        relatedSkills: ['Next.js'],
-        roleRelevance: ['Frontend Developer'],
-        demandLevel: 85,
-      },
-      {
-        id: 'ci-cd',
-        label: 'Vercel / GitHub Actions',
-        category: 'TOOL',
-        x: 830,
-        y: 330,
-        description: 'Automated preview deployments, pull request validation checks, and production CI/CD pipelines.',
-        prerequisites: ['git'],
-        relatedSkills: ['Next.js'],
-        roleRelevance: ['Frontend Developer'],
-        demandLevel: 87,
-      },
-    ],
-    edges: [
-      { source: 'html-css', target: 'tailwind', type: 'PREREQUISITE' },
-      { source: 'javascript', target: 'typescript', type: 'PREREQUISITE' },
-      { source: 'javascript', target: 'dom-apis', type: 'PREREQUISITE' },
-      { source: 'typescript', target: 'react', type: 'PREREQUISITE' },
-      { source: 'tailwind', target: 'react', type: 'RELATED' },
-      { source: 'dom-apis', target: 'rest-apis', type: 'PREREQUISITE' },
-      { source: 'react', target: 'rest-apis', type: 'RELATED' },
-      { source: 'react', target: 'state-management', type: 'PREREQUISITE' },
-      { source: 'react', target: 'nextjs', type: 'PREREQUISITE' },
-      { source: 'react', target: 'testing', type: 'PREREQUISITE' },
-      { source: 'nextjs', target: 'performance', type: 'RELATED' },
-      { source: 'git', target: 'ci-cd', type: 'PREREQUISITE' },
-      { source: 'nextjs', target: 'ci-cd', type: 'RELATED' },
-    ],
-  },
-
-  'Full Stack Developer': {
-    nodes: [
-      {
-        id: 'javascript',
-        label: 'JavaScript / TypeScript',
-        category: 'LANGUAGE',
-        x: 120,
-        y: 260,
-        description: 'Full-stack language parity across client applications and Node.js or polyglot backends.',
-        prerequisites: [],
-        relatedSkills: ['React', 'Node.js'],
-        roleRelevance: ['Full Stack Developer'],
-        demandLevel: 96,
-      },
-      {
-        id: 'sql',
-        label: 'SQL & Relational DBs',
-        category: 'DATABASE',
-        x: 120,
-        y: 430,
-        description: 'Relational data modeling, table normalization, indexing, and transactional guarantees.',
-        prerequisites: [],
-        relatedSkills: ['PostgreSQL', 'Prisma'],
-        roleRelevance: ['Full Stack Developer'],
-        demandLevel: 92,
-      },
-      {
-        id: 'git',
-        label: 'Git Version Control',
-        category: 'TOOL',
-        x: 120,
-        y: 130,
-        description: 'Full-stack repository management, monorepo tooling, and branch deployment strategies.',
-        prerequisites: [],
-        relatedSkills: ['CI/CD'],
-        roleRelevance: ['Full Stack Developer'],
-        demandLevel: 90,
-      },
-      {
-        id: 'react',
-        label: 'React Frontend',
-        category: 'FRAMEWORK',
-        x: 300,
-        y: 220,
-        description: 'Interactive UI components, state management, form validation, and reactive client architecture.',
-        prerequisites: ['javascript'],
-        relatedSkills: ['Next.js'],
-        roleRelevance: ['Full Stack Developer'],
-        demandLevel: 95,
-      },
-      {
-        id: 'nodejs',
-        label: 'Node.js / Express / Spring',
-        category: 'FRAMEWORK',
-        x: 300,
-        y: 370,
-        description: 'Server runtime environments, asynchronous request pipelines, middleware, and business logic execution.',
-        prerequisites: ['javascript'],
-        relatedSkills: ['REST APIs', 'PostgreSQL'],
-        roleRelevance: ['Full Stack Developer'],
-        demandLevel: 91,
-      },
-      {
-        id: 'postgresql',
-        label: 'PostgreSQL Database',
-        category: 'DATABASE',
-        x: 300,
-        y: 500,
-        description: 'Primary relational data storage, migrations, connection pools, and query optimization.',
-        prerequisites: ['sql'],
-        relatedSkills: ['Prisma / ORM'],
-        roleRelevance: ['Full Stack Developer'],
-        demandLevel: 90,
-      },
-      {
-        id: 'nextjs',
-        label: 'Next.js Full Stack',
-        category: 'FRAMEWORK',
-        x: 490,
-        y: 210,
-        description: 'Unified full-stack framework with Server Actions, API routes, and hybrid rendering.',
-        prerequisites: ['react'],
-        relatedSkills: ['REST APIs', 'Authentication'],
-        roleRelevance: ['Full Stack Developer'],
-        demandLevel: 93,
-      },
-      {
-        id: 'rest-apis',
-        label: 'RESTful API Engineering',
-        category: 'CONCEPT',
-        x: 490,
-        y: 350,
-        description: 'Designing robust API contracts, status codes, DTO validation, and error payload schemas.',
-        prerequisites: ['nodejs'],
-        relatedSkills: ['Authentication'],
-        roleRelevance: ['Full Stack Developer'],
-        demandLevel: 94,
-      },
-      {
-        id: 'orm',
-        label: 'ORM (Prisma / Hibernate)',
-        category: 'FRAMEWORK',
-        x: 490,
-        y: 480,
-        description: 'Type-safe database abstraction, automated schema migrations, and relation querying.',
-        prerequisites: ['postgresql'],
-        relatedSkills: ['REST APIs'],
-        roleRelevance: ['Full Stack Developer'],
-        demandLevel: 87,
-      },
-      {
-        id: 'auth',
-        label: 'JWT & OAuth Authentication',
-        category: 'CONCEPT',
-        x: 670,
-        y: 260,
-        description: 'Stateless session tokens, HttpOnly cookies, password hashing (bcrypt), and RBAC access control.',
-        prerequisites: ['rest-apis'],
-        relatedSkills: ['Docker'],
-        roleRelevance: ['Full Stack Developer'],
-        demandLevel: 91,
-      },
-      {
-        id: 'docker',
-        label: 'Docker Containers',
-        category: 'TOOL',
-        x: 670,
-        y: 420,
-        description: 'Reproducible container environments for client, backend server, and local database services.',
-        prerequisites: ['git'],
-        relatedSkills: ['Cloud Deployment'],
-        roleRelevance: ['Full Stack Developer'],
-        demandLevel: 89,
-      },
-      {
-        id: 'cloud-deploy',
-        label: 'Cloud Deployment (AWS/Vercel)',
-        category: 'PLATFORM',
-        x: 830,
-        y: 330,
-        description: 'Production hosting, managed databases, environment variables, DNS, and TLS certificates.',
-        prerequisites: ['docker', 'auth'],
-        relatedSkills: [],
-        roleRelevance: ['Full Stack Developer'],
-        demandLevel: 88,
-      },
-    ],
-    edges: [
-      { source: 'javascript', target: 'react', type: 'PREREQUISITE' },
-      { source: 'javascript', target: 'nodejs', type: 'PREREQUISITE' },
-      { source: 'sql', target: 'postgresql', type: 'PREREQUISITE' },
-      { source: 'react', target: 'nextjs', type: 'PREREQUISITE' },
-      { source: 'nodejs', target: 'rest-apis', type: 'PREREQUISITE' },
-      { source: 'postgresql', target: 'orm', type: 'PREREQUISITE' },
-      { source: 'orm', target: 'rest-apis', type: 'RELATED' },
-      { source: 'rest-apis', target: 'auth', type: 'PREREQUISITE' },
-      { source: 'nextjs', target: 'auth', type: 'RELATED' },
-      { source: 'git', target: 'docker', type: 'RELATED' },
-      { source: 'docker', target: 'cloud-deploy', type: 'PREREQUISITE' },
-      { source: 'auth', target: 'cloud-deploy', type: 'RELATED' },
-    ],
-  },
-
-  'Cloud / DevOps Engineer': {
-    nodes: [
-      {
-        id: 'linux',
-        label: 'Linux Systems & Shell',
-        category: 'CONCEPT',
-        x: 120,
-        y: 230,
-        description: 'POSIX command-line, file permissions, process supervision (systemd), SSH, and shell scripting.',
-        prerequisites: [],
-        relatedSkills: ['Docker', 'Networking'],
-        roleRelevance: ['Cloud / DevOps Engineer'],
-        demandLevel: 95,
-      },
-      {
-        id: 'git',
-        label: 'Git & GitOps',
-        category: 'TOOL',
-        x: 120,
-        y: 390,
-        description: 'Version control for infrastructure-as-code, pull-request automation, and trunk-based deployment.',
-        prerequisites: [],
-        relatedSkills: ['CI/CD'],
-        roleRelevance: ['Cloud / DevOps Engineer'],
-        demandLevel: 92,
-      },
-      {
-        id: 'networking',
-        label: 'Networking & DNS',
-        category: 'CONCEPT',
-        x: 120,
-        y: 520,
-        description: 'TCP/IP, HTTP/HTTPS, SSL/TLS certificates, reverse proxies (Nginx), VPCs, subnets, and routing tables.',
-        prerequisites: [],
-        relatedSkills: ['AWS Cloud'],
-        roleRelevance: ['Cloud / DevOps Engineer'],
-        demandLevel: 88,
-      },
-      {
-        id: 'docker',
-        label: 'Docker & Containers',
-        category: 'TOOL',
-        x: 300,
-        y: 270,
-        description: 'Multi-stage image builds, OCI container standards, non-root security, and container networking.',
-        prerequisites: ['linux'],
-        relatedSkills: ['Kubernetes', 'CI/CD'],
-        roleRelevance: ['Cloud / DevOps Engineer'],
-        demandLevel: 97,
-      },
-      {
-        id: 'python-bash',
-        label: 'Python & Bash Automation',
-        category: 'LANGUAGE',
-        x: 300,
-        y: 430,
-        description: 'Scripting infrastructure automation, AWS SDK (boto3), custom CLI tooling, and cron utilities.',
-        prerequisites: ['linux'],
-        relatedSkills: ['Terraform'],
-        roleRelevance: ['Cloud / DevOps Engineer'],
-        demandLevel: 88,
-      },
-      {
-        id: 'ci-cd',
-        label: 'CI/CD (GitHub Actions)',
-        category: 'TOOL',
-        x: 480,
-        y: 210,
-        description: 'Automated test runners, vulnerability scanning, semantic releases, and container registry publishing.',
-        prerequisites: ['docker', 'git'],
-        relatedSkills: ['Kubernetes', 'AWS'],
-        roleRelevance: ['Cloud / DevOps Engineer'],
-        demandLevel: 94,
-      },
-      {
-        id: 'kubernetes',
-        label: 'Kubernetes (K8s)',
-        category: 'PLATFORM',
-        x: 480,
-        y: 350,
-        description: 'Deployments, Pods, Services, Ingress, ConfigMaps, Helm charts, and horizontal pod autoscaling.',
-        prerequisites: ['docker'],
-        relatedSkills: ['AWS Cloud', 'Terraform'],
-        roleRelevance: ['Cloud / DevOps Engineer'],
-        demandLevel: 96,
-      },
-      {
-        id: 'terraform',
-        label: 'Terraform / IaC',
-        category: 'TOOL',
-        x: 480,
-        y: 490,
-        description: 'Declarative infrastructure as code, state management, reusable modules, and multi-environment setup.',
-        prerequisites: ['python-bash'],
-        relatedSkills: ['AWS Cloud'],
-        roleRelevance: ['Cloud / DevOps Engineer'],
-        demandLevel: 93,
-      },
-      {
-        id: 'aws',
-        label: 'AWS Cloud Services',
-        category: 'PLATFORM',
-        x: 670,
-        y: 280,
-        description: 'EC2, ECS, EKS, S3, RDS, Lambda, CloudWatch, and IAM least-privilege security policies.',
-        prerequisites: ['kubernetes', 'terraform'],
-        relatedSkills: ['Monitoring'],
-        roleRelevance: ['Cloud / DevOps Engineer'],
-        demandLevel: 95,
-      },
-      {
-        id: 'monitoring',
-        label: 'Prometheus & Grafana',
-        category: 'TOOL',
-        x: 670,
-        y: 440,
-        description: 'Observability metrics, custom service dashboards, SLO/SLA tracking, and PagerDuty alert rules.',
-        prerequisites: ['kubernetes'],
-        relatedSkills: ['DevSecOps'],
-        roleRelevance: ['Cloud / DevOps Engineer'],
-        demandLevel: 87,
-      },
-      {
-        id: 'devsecops',
-        label: 'DevSecOps & Zero Trust',
-        category: 'CONCEPT',
-        x: 830,
-        y: 350,
-        description: 'Secret management (Vault/AWS Secrets Manager), container image scanning, and IAM governance.',
-        prerequisites: ['aws'],
-        relatedSkills: [],
-        roleRelevance: ['Cloud / DevOps Engineer'],
-        demandLevel: 90,
-      },
-    ],
-    edges: [
-      { source: 'linux', target: 'docker', type: 'PREREQUISITE' },
-      { source: 'linux', target: 'python-bash', type: 'PREREQUISITE' },
-      { source: 'git', target: 'ci-cd', type: 'PREREQUISITE' },
-      { source: 'docker', target: 'ci-cd', type: 'PREREQUISITE' },
-      { source: 'docker', target: 'kubernetes', type: 'PREREQUISITE' },
-      { source: 'python-bash', target: 'terraform', type: 'RELATED' },
-      { source: 'kubernetes', target: 'aws', type: 'PREREQUISITE' },
-      { source: 'terraform', target: 'aws', type: 'PREREQUISITE' },
-      { source: 'networking', target: 'aws', type: 'RELATED' },
-      { source: 'kubernetes', target: 'monitoring', type: 'PREREQUISITE' },
-      { source: 'aws', target: 'devsecops', type: 'PREREQUISITE' },
-      { source: 'monitoring', target: 'devsecops', type: 'RELATED' },
-    ],
-  },
-
-  'AI / Machine Learning Engineer': {
-    nodes: [
-      {
-        id: 'python',
-        label: 'Python',
-        category: 'LANGUAGE',
-        x: 120,
-        y: 280,
-        description: 'Core Python for AI/ML: type hinting, generators, memory management, and package packaging.',
-        prerequisites: [],
-        relatedSkills: ['NumPy & Pandas', 'FastAPI'],
-        roleRelevance: ['AI / Machine Learning Engineer'],
-        demandLevel: 98,
-      },
-      {
-        id: 'math',
-        label: 'Linear Algebra & Stats',
-        category: 'CONCEPT',
-        x: 120,
-        y: 440,
-        description: 'Matrix decompositions, vector spaces, gradient descent optimization, probability, and loss functions.',
-        prerequisites: [],
-        relatedSkills: ['PyTorch'],
-        roleRelevance: ['AI / Machine Learning Engineer'],
-        demandLevel: 89,
-      },
-      {
-        id: 'git',
-        label: 'Git & Versioning',
-        category: 'TOOL',
-        x: 120,
-        y: 140,
-        description: 'Experiment versioning, code reviews, and reproducible ML codebase workflows.',
-        prerequisites: [],
-        relatedSkills: [],
-        roleRelevance: ['AI / Machine Learning Engineer'],
-        demandLevel: 88,
-      },
-      {
-        id: 'numpy-pandas',
-        label: 'NumPy & Pandas',
-        category: 'TOOL',
-        x: 290,
-        y: 230,
-        description: 'High-performance numerical multidimensional arrays, data manipulation, cleaning, and feature engineering.',
-        prerequisites: ['python'],
-        relatedSkills: ['Scikit-Learn'],
-        roleRelevance: ['AI / Machine Learning Engineer'],
-        demandLevel: 94,
-      },
-      {
-        id: 'sql',
-        label: 'SQL Data Extraction',
-        category: 'DATABASE',
-        x: 290,
-        y: 390,
-        description: 'Data warehouse query extraction, aggregation pipelines, and big data preparation.',
-        prerequisites: [],
-        relatedSkills: ['Vector DBs'],
-        roleRelevance: ['AI / Machine Learning Engineer'],
-        demandLevel: 91,
-      },
-      {
-        id: 'fastapi',
-        label: 'FastAPI / Inference',
-        category: 'FRAMEWORK',
-        x: 470,
-        y: 170,
-        description: 'High-throughput asynchronous model serving, Pydantic schemas, and RESTful inference endpoints.',
-        prerequisites: ['python'],
-        relatedSkills: ['Docker'],
-        roleRelevance: ['AI / Machine Learning Engineer'],
-        demandLevel: 90,
-      },
-      {
-        id: 'scikit',
-        label: 'Scikit-Learn',
-        category: 'FRAMEWORK',
-        x: 470,
-        y: 300,
-        description: 'Classical ML models: Random Forests, Gradient Boosting (XGBoost), regression, and clustering.',
-        prerequisites: ['numpy-pandas', 'math'],
-        relatedSkills: ['PyTorch'],
-        roleRelevance: ['AI / Machine Learning Engineer'],
-        demandLevel: 92,
-      },
-      {
-        id: 'vector-dbs',
-        label: 'Vector DBs (pgvector)',
-        category: 'DATABASE',
-        x: 470,
-        y: 440,
-        description: 'Vector similarity search (HNSW, Cosine), embeddings indexing, pgvector, Chroma, and Pinecone.',
-        prerequisites: ['sql'],
-        relatedSkills: ['LLMs & RAG'],
-        roleRelevance: ['AI / Machine Learning Engineer'],
-        demandLevel: 93,
-      },
-      {
-        id: 'pytorch',
-        label: 'PyTorch / Deep Learning',
-        category: 'FRAMEWORK',
-        x: 660,
-        y: 250,
-        description: 'Tensors, autograd, Neural Network architectures (Transformers, CNNs), and fine-tuning pipelines.',
-        prerequisites: ['scikit', 'math'],
-        relatedSkills: ['LLMs & RAG'],
-        roleRelevance: ['AI / Machine Learning Engineer'],
-        demandLevel: 95,
-      },
-      {
-        id: 'llms-rag',
-        label: 'LLMs & RAG Architectures',
-        category: 'CONCEPT',
-        x: 660,
-        y: 390,
-        description: 'Retrieval-Augmented Generation, prompt grounding, context chunking, LangChain, and evaluation benchmarks.',
-        prerequisites: ['vector-dbs', 'pytorch'],
-        relatedSkills: ['MLOps'],
-        roleRelevance: ['AI / Machine Learning Engineer'],
-        demandLevel: 97,
-      },
-      {
-        id: 'mlops',
-        label: 'Docker & MLOps Deployment',
-        category: 'TOOL',
-        x: 830,
-        y: 320,
-        description: 'Containerized model packaging, GPU inference deployment, model registry, and latency optimization.',
-        prerequisites: ['fastapi', 'llms-rag'],
-        relatedSkills: [],
-        roleRelevance: ['AI / Machine Learning Engineer'],
-        demandLevel: 91,
-      },
-    ],
-    edges: [
-      { source: 'python', target: 'numpy-pandas', type: 'PREREQUISITE' },
-      { source: 'python', target: 'fastapi', type: 'PREREQUISITE' },
-      { source: 'numpy-pandas', target: 'scikit', type: 'PREREQUISITE' },
-      { source: 'math', target: 'scikit', type: 'PREREQUISITE' },
-      { source: 'sql', target: 'vector-dbs', type: 'PREREQUISITE' },
-      { source: 'scikit', target: 'pytorch', type: 'PREREQUISITE' },
-      { source: 'vector-dbs', target: 'llms-rag', type: 'PREREQUISITE' },
-      { source: 'pytorch', target: 'llms-rag', type: 'RELATED' },
-      { source: 'fastapi', target: 'mlops', type: 'PREREQUISITE' },
-      { source: 'llms-rag', target: 'mlops', type: 'RELATED' },
-    ],
-  },
-
-  'Software Engineer': {
-    nodes: [
-      {
-        id: 'core-lang',
-        label: 'Core Language (Java/Python)',
-        category: 'LANGUAGE',
-        x: 120,
-        y: 250,
-        description: 'Syntax, memory management, standard libraries, and compile/execution runtime characteristics.',
-        prerequisites: [],
-        relatedSkills: ['DSA', 'OOP'],
-        roleRelevance: ['Software Engineer'],
-        demandLevel: 95,
-      },
-      {
-        id: 'git',
-        label: 'Git & Versioning',
-        category: 'TOOL',
-        x: 120,
-        y: 410,
-        description: 'Feature branching, pull requests, automated merge checks, and commit hygiene.',
-        prerequisites: [],
-        relatedSkills: ['Testing'],
-        roleRelevance: ['Software Engineer'],
-        demandLevel: 90,
-      },
-      {
-        id: 'dsa',
-        label: 'Data Structures & Algorithms',
-        category: 'CONCEPT',
-        x: 290,
-        y: 210,
-        description: 'Arrays, Trees, Graphs, Hash Tables, dynamic programming, and Big-O asymptotic analysis.',
-        prerequisites: ['core-lang'],
-        relatedSkills: ['System Design'],
-        roleRelevance: ['Software Engineer'],
-        demandLevel: 98,
-      },
-      {
-        id: 'oop',
-        label: 'OOP & Design Patterns',
-        category: 'CONCEPT',
-        x: 290,
-        y: 350,
-        description: 'SOLID principles, Factory, Singleton, Strategy, Observer, and modular component isolation.',
-        prerequisites: ['core-lang'],
-        relatedSkills: ['REST APIs'],
-        roleRelevance: ['Software Engineer'],
-        demandLevel: 92,
-      },
-      {
-        id: 'sql',
-        label: 'Relational SQL',
-        category: 'DATABASE',
-        x: 290,
-        y: 480,
-        description: 'Database normalization, indexing, execution plans, transactions, and ACID compliance.',
-        prerequisites: [],
-        relatedSkills: ['System Design'],
-        roleRelevance: ['Software Engineer'],
-        demandLevel: 91,
-      },
-      {
-        id: 'system-design',
-        label: 'System Design Fundamentals',
-        category: 'CONCEPT',
-        x: 480,
-        y: 240,
-        description: 'Scalability, load balancing, stateless services, CAP theorem, replication, and caching tiers.',
-        prerequisites: ['dsa', 'oop'],
-        relatedSkills: ['Distributed Systems'],
-        roleRelevance: ['Software Engineer'],
-        demandLevel: 96,
-      },
-      {
-        id: 'rest-apis',
-        label: 'REST API Architecture',
-        category: 'CONCEPT',
-        x: 480,
-        y: 380,
-        description: 'Stateless HTTP APIs, idempotency, rate-limiting, authentication tokens, and serialization.',
-        prerequisites: ['oop'],
-        relatedSkills: ['Docker'],
-        roleRelevance: ['Software Engineer'],
-        demandLevel: 93,
-      },
-      {
-        id: 'testing',
-        label: 'Automated Testing Suites',
-        category: 'TOOL',
-        x: 480,
-        y: 510,
-        description: 'Test-Driven Development (TDD), unit mock isolation, and end-to-end integration verification.',
-        prerequisites: ['git'],
-        relatedSkills: ['CI/CD'],
-        roleRelevance: ['Software Engineer'],
-        demandLevel: 87,
-      },
-      {
-        id: 'docker',
-        label: 'Docker & Containers',
-        category: 'TOOL',
-        x: 670,
-        y: 300,
-        description: 'Containerized packaging, environment parity, Docker compose, and microservice isolation.',
-        prerequisites: ['rest-apis'],
-        relatedSkills: ['CI/CD'],
-        roleRelevance: ['Software Engineer'],
-        demandLevel: 90,
-      },
-      {
-        id: 'distributed',
-        label: 'Distributed Caching (Redis/Kafka)',
-        category: 'TOOL',
-        x: 670,
-        y: 440,
-        description: 'In-memory caching tiers, asynchronous message streaming, and decoupled pub/sub events.',
-        prerequisites: ['system-design', 'sql'],
-        relatedSkills: [],
-        roleRelevance: ['Software Engineer'],
-        demandLevel: 88,
-      },
-      {
-        id: 'ci-cd',
-        label: 'CI/CD & Cloud Deployments',
-        category: 'PLATFORM',
-        x: 830,
-        y: 360,
-        description: 'Automated build pipelines, containerized rollouts, health checks, and zero-downtime deployment.',
-        prerequisites: ['docker', 'testing'],
-        relatedSkills: [],
-        roleRelevance: ['Software Engineer'],
-        demandLevel: 89,
-      },
-    ],
-    edges: [
-      { source: 'core-lang', target: 'dsa', type: 'PREREQUISITE' },
-      { source: 'core-lang', target: 'oop', type: 'PREREQUISITE' },
-      { source: 'dsa', target: 'system-design', type: 'PREREQUISITE' },
-      { source: 'oop', target: 'system-design', type: 'PREREQUISITE' },
-      { source: 'oop', target: 'rest-apis', type: 'PREREQUISITE' },
-      { source: 'sql', target: 'system-design', type: 'RELATED' },
-      { source: 'git', target: 'testing', type: 'PREREQUISITE' },
-      { source: 'rest-apis', target: 'docker', type: 'PREREQUISITE' },
-      { source: 'system-design', target: 'distributed', type: 'PREREQUISITE' },
-      { source: 'docker', target: 'ci-cd', type: 'PREREQUISITE' },
-      { source: 'testing', target: 'ci-cd', type: 'PREREQUISITE' },
-    ],
-  },
-
-  'Spring Boot Developer': {
-    nodes: [
-      {
-        id: 'java',
-        label: 'Java SE 17/21',
-        category: 'LANGUAGE',
-        x: 120,
-        y: 280,
-        description: 'Modern Java features: records, pattern matching, virtual threads, streams, and garbage collection.',
-        prerequisites: [],
-        relatedSkills: ['Spring Framework', 'OOP'],
-        roleRelevance: ['Spring Boot Developer'],
-        demandLevel: 96,
-      },
-      {
-        id: 'git-maven',
-        label: 'Git & Maven / Gradle',
-        category: 'TOOL',
-        x: 120,
-        y: 430,
-        description: 'Dependency management, multi-module project builds, plugins, and version control.',
-        prerequisites: [],
-        relatedSkills: ['Spring Boot'],
-        roleRelevance: ['Spring Boot Developer'],
-        demandLevel: 89,
-      },
-      {
-        id: 'oop',
-        label: 'OOP & Enterprise Patterns',
-        category: 'CONCEPT',
-        x: 290,
-        y: 220,
-        description: 'SOLID, Repository pattern, Service layer pattern, DTO mappings, and exception hierarchies.',
-        prerequisites: ['java'],
-        relatedSkills: ['Spring Framework'],
-        roleRelevance: ['Spring Boot Developer'],
-        demandLevel: 91,
-      },
-      {
-        id: 'sql',
-        label: 'SQL & Database Design',
-        category: 'DATABASE',
-        x: 290,
-        y: 380,
-        description: 'Schema modeling, foreign keys, index strategies, transaction isolation levels, and explain plans.',
-        prerequisites: [],
-        relatedSkills: ['Hibernate'],
-        roleRelevance: ['Spring Boot Developer'],
-        demandLevel: 92,
-      },
-      {
-        id: 'spring-framework',
-        label: 'Spring Framework Core',
-        category: 'FRAMEWORK',
-        x: 480,
-        y: 230,
-        description: 'Inversion of Control container, Bean lifecycles, @Autowired, @Configuration, and Spring AOP.',
-        prerequisites: ['oop'],
-        relatedSkills: ['Spring Boot'],
-        roleRelevance: ['Spring Boot Developer'],
-        demandLevel: 94,
-      },
-      {
-        id: 'hibernate',
-        label: 'Hibernate / Spring Data JPA',
-        category: 'FRAMEWORK',
-        x: 480,
-        y: 380,
-        description: 'Entity relationships (@OneToMany, @ManyToMany), dirty checking, JPQL queries, and N+1 prevention.',
-        prerequisites: ['sql', 'oop'],
-        relatedSkills: ['Spring Boot', 'PostgreSQL'],
-        roleRelevance: ['Spring Boot Developer'],
-        demandLevel: 93,
-      },
-      {
-        id: 'postgresql',
-        label: 'PostgreSQL Engine',
-        category: 'DATABASE',
-        x: 480,
-        y: 510,
-        description: 'Production relational engine, HikariCP connection pooling, and Flyway/Liquibase migrations.',
-        prerequisites: ['sql'],
-        relatedSkills: ['Hibernate'],
-        roleRelevance: ['Spring Boot Developer'],
-        demandLevel: 90,
-      },
-      {
-        id: 'spring-boot',
-        label: 'Spring Boot 3',
-        category: 'FRAMEWORK',
-        x: 660,
-        y: 240,
-        description: 'Auto-configuration starters, Actuator health endpoints, Profiles, and GraalVM native images.',
-        prerequisites: ['spring-framework'],
-        relatedSkills: ['REST APIs', 'Spring Security'],
-        roleRelevance: ['Spring Boot Developer'],
-        demandLevel: 98,
-      },
-      {
-        id: 'rest-apis',
-        label: 'RESTful Microservices',
-        category: 'CONCEPT',
-        x: 660,
-        y: 380,
-        description: '@RestController, ResponseEntity, validation constraints (@Valid), and OpenAPI Swagger documentation.',
-        prerequisites: ['spring-boot'],
-        relatedSkills: ['Spring Security'],
-        roleRelevance: ['Spring Boot Developer'],
-        demandLevel: 95,
-      },
-      {
-        id: 'spring-security',
-        label: 'Spring Security 6 & OAuth2',
-        category: 'FRAMEWORK',
-        x: 830,
-        y: 220,
-        description: 'SecurityFilterChain filters, stateless JWT token authentication, and method security (@PreAuthorize).',
-        prerequisites: ['spring-boot', 'rest-apis'],
-        relatedSkills: [],
-        roleRelevance: ['Spring Boot Developer'],
-        demandLevel: 92,
-      },
-      {
-        id: 'docker-microservices',
-        label: 'Docker & Testcontainers',
-        category: 'TOOL',
-        x: 830,
-        y: 370,
-        description: 'Spring Boot Dockerfiles, layered JARs, Testcontainers for real PostgreSQL integration tests.',
-        prerequisites: ['spring-boot', 'git-maven'],
-        relatedSkills: [],
-        roleRelevance: ['Spring Boot Developer'],
-        demandLevel: 91,
-      },
-      {
-        id: 'kafka-redis',
-        label: 'Kafka & Redis Caching',
-        category: 'TOOL',
-        x: 830,
-        y: 500,
-        description: 'Spring Kafka producers/consumers and @Cacheable Redis caching for low-latency queries.',
-        prerequisites: ['spring-boot'],
-        relatedSkills: [],
-        roleRelevance: ['Spring Boot Developer'],
-        demandLevel: 87,
-      },
-    ],
-    edges: [
-      { source: 'java', target: 'oop', type: 'PREREQUISITE' },
-      { source: 'java', target: 'spring-framework', type: 'PREREQUISITE' },
-      { source: 'oop', target: 'spring-framework', type: 'PREREQUISITE' },
-      { source: 'sql', target: 'hibernate', type: 'PREREQUISITE' },
-      { source: 'sql', target: 'postgresql', type: 'PREREQUISITE' },
-      { source: 'spring-framework', target: 'spring-boot', type: 'PREREQUISITE' },
-      { source: 'spring-boot', target: 'rest-apis', type: 'PREREQUISITE' },
-      { source: 'spring-boot', target: 'hibernate', type: 'RELATED' },
-      { source: 'rest-apis', target: 'spring-security', type: 'PREREQUISITE' },
-      { source: 'spring-boot', target: 'docker-microservices', type: 'RELATED' },
-      { source: 'git-maven', target: 'docker-microservices', type: 'PREREQUISITE' },
-      { source: 'spring-boot', target: 'kafka-redis', type: 'RELATED' },
-    ],
-  },
-
-  'Mobile Developer (Android/Flutter)': {
-    nodes: [
-      {
-        id: 'kotlin-dart',
-        label: 'Kotlin / Dart',
-        category: 'LANGUAGE',
-        x: 120,
-        y: 260,
-        description: 'Modern mobile languages: null-safety, coroutines/async streams, lambdas, and OOP.',
-        prerequisites: [],
-        relatedSkills: ['UI Layouts', 'Android SDK'],
-        roleRelevance: ['Mobile Developer (Android/Flutter)'],
-        demandLevel: 93,
-      },
-      {
-        id: 'git',
-        label: 'Git & Mobile Versioning',
-        category: 'TOOL',
-        x: 120,
-        y: 420,
-        description: 'Release branching, submodule management, and automated Git-based release tagging.',
-        prerequisites: [],
-        relatedSkills: [],
-        roleRelevance: ['Mobile Developer (Android/Flutter)'],
-        demandLevel: 88,
-      },
-      {
-        id: 'ui-layouts',
-        label: 'Jetpack Compose / Flutter UI',
-        category: 'CONCEPT',
-        x: 290,
-        y: 230,
-        description: 'Declarative UI programming, stateful widgets, modifier chains, animations, and responsive screens.',
-        prerequisites: ['kotlin-dart'],
-        relatedSkills: ['State Management'],
-        roleRelevance: ['Mobile Developer (Android/Flutter)'],
-        demandLevel: 94,
-      },
-      {
-        id: 'network-apis',
-        label: 'REST APIs & Retrofit',
-        category: 'CONCEPT',
-        x: 290,
-        y: 390,
-        description: 'HTTP client integration, JSON deserialization, error interceptors, and offline network policies.',
-        prerequisites: ['kotlin-dart'],
-        relatedSkills: ['Local DB'],
-        roleRelevance: ['Mobile Developer (Android/Flutter)'],
-        demandLevel: 91,
-      },
-      {
-        id: 'local-db',
-        label: 'Room DB / SQLite / Hive',
-        category: 'DATABASE',
-        x: 480,
-        y: 380,
-        description: 'On-device local persistence, caching repositories, database migrations, and offline sync.',
-        prerequisites: ['network-apis'],
-        relatedSkills: ['Architecture'],
-        roleRelevance: ['Mobile Developer (Android/Flutter)'],
-        demandLevel: 87,
-      },
-      {
-        id: 'state-mgmt',
-        label: 'State Management (Bloc/ViewModel)',
-        category: 'FRAMEWORK',
-        x: 480,
-        y: 230,
-        description: 'MVVM architecture, Unidirectional Data Flow (UDF), StateFlow, LiveData, and Bloc patterns.',
-        prerequisites: ['ui-layouts'],
-        relatedSkills: ['Architecture'],
-        roleRelevance: ['Mobile Developer (Android/Flutter)'],
-        demandLevel: 92,
-      },
-      {
-        id: 'testing-mobile',
-        label: 'Unit & UI Espresso Testing',
-        category: 'TOOL',
-        x: 670,
-        y: 250,
-        description: 'Mocking repositories, testing state flows, and automated UI integration tests on emulators.',
-        prerequisites: ['state-mgmt'],
-        relatedSkills: ['CI/CD'],
-        roleRelevance: ['Mobile Developer (Android/Flutter)'],
-        demandLevel: 84,
-      },
-      {
-        id: 'ci-cd-store',
-        label: 'Play Store / CI/CD (Fastlane)',
-        category: 'PLATFORM',
-        x: 830,
-        y: 340,
-        description: 'Automated APK/AAB signing, Fastlane pipelines, Firebase App Distribution, and Play Console releases.',
-        prerequisites: ['testing-mobile', 'git'],
-        relatedSkills: [],
-        roleRelevance: ['Mobile Developer (Android/Flutter)'],
-        demandLevel: 89,
-      },
-    ],
-    edges: [
-      { source: 'kotlin-dart', target: 'ui-layouts', type: 'PREREQUISITE' },
-      { source: 'kotlin-dart', target: 'network-apis', type: 'PREREQUISITE' },
-      { source: 'ui-layouts', target: 'state-mgmt', type: 'PREREQUISITE' },
-      { source: 'network-apis', target: 'local-db', type: 'PREREQUISITE' },
-      { source: 'state-mgmt', target: 'testing-mobile', type: 'PREREQUISITE' },
-      { source: 'testing-mobile', target: 'ci-cd-store', type: 'PREREQUISITE' },
-      { source: 'git', target: 'ci-cd-store', type: 'RELATED' },
-    ],
-  },
-}
-
 const VIEWBOX_W = 900
 const VIEWBOX_H = 600
 const MIN_SCALE = 0.5
 const MAX_SCALE = 2.5
 
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
-
 export function SkillExplorerPage() {
   const { user } = useAuth()
+
+  // Track custom user roles added dynamically
+  const [customRoles, setCustomRoles] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem('vetra_custom_roles')
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed)) return parsed
+      }
+    } catch {}
+    return []
+  })
 
   // Initialize selectedRole based on the user's active target role
   const [selectedRole, setSelectedRole] = useState<string>(() => {
     const stored = localStorage.getItem('vetra_target_role')
-    if (stored && AVAILABLE_ROLES.includes(stored as any)) return stored
-    if (user?.targetRole && AVAILABLE_ROLES.includes(user.targetRole as any)) return user.targetRole
+    if (stored && stored.trim()) return stored.trim()
+    if (user?.targetRole && user.targetRole.trim()) return user.targetRole.trim()
     return 'Java Backend Developer'
   })
 
+  // Full dynamic list of roles (presets + user custom roles)
+  const availableRoles = useMemo(() => {
+    const set = new Set([...PRESET_ROLES, ...customRoles])
+    if (user?.targetRole && user.targetRole.trim()) set.add(user.targetRole.trim())
+    if (selectedRole && selectedRole.trim()) set.add(selectedRole.trim())
+    return Array.from(set)
+  }, [customRoles, user?.targetRole, selectedRole])
+
+  // Custom role modal state
+  const [customDialogOpen, setCustomDialogOpen] = useState(false)
+  const [newRoleInput, setNewRoleInput] = useState('')
+
   // Keep synced if user's profile role or resume sync updates
   useEffect(() => {
-    if (user?.targetRole && AVAILABLE_ROLES.includes(user.targetRole as any)) {
-      setSelectedRole(user.targetRole)
+    if (user?.targetRole && user.targetRole.trim()) {
+      setSelectedRole(user.targetRole.trim())
     }
   }, [user?.targetRole])
 
   useEffect(() => {
     const handleSync = (e: any) => {
       const roleStr = e?.detail?.detectedRole || ''
-      if (roleStr && AVAILABLE_ROLES.includes(roleStr as any)) {
-        setSelectedRole(roleStr)
+      if (roleStr && roleStr.trim()) {
+        setSelectedRole(roleStr.trim())
+      }
+    }
+    const handleRoleUpdate = (e: any) => {
+      const roleStr = e?.detail?.role || ''
+      if (roleStr && roleStr.trim()) {
+        setSelectedRole(roleStr.trim())
       }
     }
     window.addEventListener('vetra_resume_synced', handleSync)
-    return () => window.removeEventListener('vetra_resume_synced', handleSync)
+    window.addEventListener('vetra_role_updated', handleRoleUpdate)
+    return () => {
+      window.removeEventListener('vetra_resume_synced', handleSync)
+      window.removeEventListener('vetra_role_updated', handleRoleUpdate)
+    }
   }, [])
 
   const [searchQuery, setSearchQuery] = useState('')
@@ -1426,9 +154,9 @@ export function SkillExplorerPage() {
   const [ty, setTy] = useState(0)
   const [highlightMySkills, setHighlightMySkills] = useState(true)
 
-  // Current active DAG for this user's role
+  // Current active DAG for this user's role (synthesized dynamically for ANY role)
   const activeGraph = useMemo(() => {
-    return ROLE_GRAPHS[selectedRole] || ROLE_GRAPHS['Java Backend Developer']
+    return synthesizeRoleGraph(selectedRole)
   }, [selectedRole])
 
   const currentNodes = activeGraph.nodes
@@ -1453,15 +181,37 @@ export function SkillExplorerPage() {
     return currentNodes.filter(n => candidateSkills.has(n.label.toLowerCase()) || candidateSkills.has(n.id.toLowerCase())).length
   }, [currentNodes, candidateSkills])
 
-  const coveragePercent = Math.round((demonstratedCount / currentNodes.length) * 100)
+  const coveragePercent = Math.round((demonstratedCount / Math.max(1, currentNodes.length)) * 100)
 
   const handleRoleChange = (newRole: string) => {
+    if (newRole === '__ADD_CUSTOM__') {
+      setCustomDialogOpen(true)
+      return
+    }
     setSelectedRole(newRole)
     localStorage.setItem('vetra_target_role', newRole)
+    window.dispatchEvent(new CustomEvent('vetra_role_updated', { detail: { role: newRole } }))
     setSelectedNodeId(null)
     resetView()
     toast.success(`Loaded Skill Graph for ${newRole}`, {
       description: `Viewing interconnected prerequisites and industry requirements for this career track.`
+    })
+  }
+
+  const handleCreateCustomRole = () => {
+    if (!newRoleInput.trim()) {
+      toast.error('Please enter a role name')
+      return
+    }
+    const roleName = newRoleInput.trim()
+    const updated = Array.from(new Set([roleName, ...customRoles]))
+    setCustomRoles(updated)
+    localStorage.setItem('vetra_custom_roles', JSON.stringify(updated))
+    handleRoleChange(roleName)
+    setNewRoleInput('')
+    setCustomDialogOpen(false)
+    toast.success(`Dynamic DAG synthesized for ${roleName}!`, {
+      description: `Generated 5-layer prerequisite roadmap and market demand.`
     })
   }
 
@@ -1564,7 +314,7 @@ export function SkillExplorerPage() {
             <h1 className="text-2xl font-bold tracking-tight text-foreground">Skill Explorer</h1>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            Dynamic Directed Acyclic Graph (DAG) mapped to your target career role. Click any node to inspect prerequisites and verified proof.
+            Dynamic Directed Acyclic Graph (DAG) synthesized for any tech role. Click any node to inspect prerequisites and verified proof.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -1581,24 +331,41 @@ export function SkillExplorerPage() {
       {/* Role Selection & Search Controls */}
       <Card className="border-border">
         <CardContent className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          {/* Target Role Selector */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full md:max-w-md">
+          {/* Target Role Selector + Custom Role Trigger */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 w-full md:max-w-lg">
             <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground shrink-0 flex items-center gap-1.5">
               <Briefcase className="h-3.5 w-3.5 text-indigo" />
               Target Role:
             </Label>
-            <Select value={selectedRole} onValueChange={handleRoleChange}>
-              <SelectTrigger className="w-full h-9 text-xs font-medium bg-card">
-                <SelectValue placeholder="Select career track" />
-              </SelectTrigger>
-              <SelectContent>
-                {AVAILABLE_ROLES.map((role) => (
-                  <SelectItem key={role} value={role} className="text-xs">
-                    {role}
+            <div className="flex items-center gap-2 w-full">
+              <Select value={selectedRole} onValueChange={handleRoleChange}>
+                <SelectTrigger className="w-full h-9 text-xs font-medium bg-card">
+                  <SelectValue placeholder="Select or create career track" />
+                </SelectTrigger>
+                <SelectContent className="max-h-80">
+                  {availableRoles.map((role) => (
+                    <SelectItem key={role} value={role} className="text-xs">
+                      {role}
+                    </SelectItem>
+                  ))}
+                  <Separator className="my-1" />
+                  <SelectItem value="__ADD_CUSTOM__" className="text-xs font-semibold text-indigo">
+                    + Add Custom Role...
                   </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                </SelectContent>
+              </Select>
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 px-2.5 text-xs text-indigo border-indigo/30 hover:bg-indigo/10 shrink-0 gap-1"
+                onClick={() => setCustomDialogOpen(true)}
+                title="Define a new custom career track"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Custom
+              </Button>
+            </div>
           </div>
 
           {/* Search Input & Actions */}
@@ -1967,6 +734,47 @@ export function SkillExplorerPage() {
           </Card>
         </div>
       </div>
+
+      {/* Custom Role Creation Dialog */}
+      <Dialog open={customDialogOpen} onOpenChange={setCustomDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-indigo" />
+              Synthesize Custom Role DAG
+            </DialogTitle>
+            <DialogDescription>
+              Enter any novel tech title (e.g. Data Engineer, Golang Microservices, Cybersecurity Specialist, Blockchain Engineer, SRE). Vetra will dynamically build the prerequisite DAG on the fly.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="custom-role-name">Target Role Title</Label>
+              <Input
+                id="custom-role-name"
+                value={newRoleInput}
+                onChange={(e) => setNewRoleInput(e.target.value)}
+                placeholder="e.g. Data Engineer"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    handleCreateCustomRole()
+                  }
+                }}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCustomDialogOpen(false)}>Cancel</Button>
+            <Button variant="gradient" onClick={handleCreateCustomRole} className="gap-1.5">
+              Synthesize & Build DAG
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -15,6 +15,7 @@ import {
   AlertCircle,
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { PRESET_ROLES, synthesizeRoleRequirements } from '@/lib/roleTaxonomy'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -263,10 +264,22 @@ export function SkillGapAnalysisPage() {
   const { user } = useAuth()
   const [selectedRole, setSelectedRole] = useState<string>(() => {
     const stored = localStorage.getItem('vetra_target_role')
-    if (stored && targetRoles.includes(stored)) return stored
-    if (user?.targetRole && targetRoles.includes(user.targetRole)) return user.targetRole
-    return targetRoles[0]
+    if (stored && stored.trim()) return stored.trim()
+    if (user?.targetRole && user.targetRole.trim()) return user.targetRole.trim()
+    return 'Java Backend Developer'
   })
+
+  const availableRoles = useMemo(() => {
+    let custom: string[] = []
+    try {
+      const stored = localStorage.getItem('vetra_custom_roles')
+      if (stored) custom = JSON.parse(stored)
+    } catch {}
+    const set = new Set([...PRESET_ROLES, ...custom])
+    if (user?.targetRole && user.targetRole.trim()) set.add(user.targetRole.trim())
+    if (selectedRole && selectedRole.trim()) set.add(selectedRole.trim())
+    return Array.from(set)
+  }, [user?.targetRole, selectedRole])
   const [skills, setSkills] = useState<SkillGapItem[]>(fallbackSkills)
   const [overallScore, setOverallScore] = useState<number>(78)
   const [demonstratedCount, setDemonstratedCount] = useState<number>(5)
@@ -314,8 +327,8 @@ export function SkillGapAnalysisPage() {
       // Fallback local dynamic calculation against candidate resume skills
     }
 
-    // Dynamic client-side calculation using candidate's real resume skills
-    const roleReqs = ROLE_TAXONOMY_MAP[roleToAnalyze] || ROLE_TAXONOMY_MAP['Java Backend Developer']
+    // Dynamic calculation using universal role requirements synthesizer
+    const roleReqs = synthesizeRoleRequirements(roleToAnalyze)
     let demCount = 0
     let partCount = 0
     let notDemCount = 0
@@ -380,14 +393,24 @@ export function SkillGapAnalysisPage() {
 
     const handleSync = (e: any) => {
       const roleStr = e?.detail?.detectedRole || ''
-      if (roleStr && targetRoles.includes(roleStr)) {
-        setSelectedRole(roleStr)
+      if (roleStr && roleStr.trim()) {
+        setSelectedRole(roleStr.trim())
       } else {
         runAnalysis(selectedRole)
       }
     }
+    const handleRoleUpdate = (e: any) => {
+      const roleStr = e?.detail?.role || ''
+      if (roleStr && roleStr.trim()) {
+        setSelectedRole(roleStr.trim())
+      }
+    }
     window.addEventListener('vetra_resume_synced', handleSync)
-    return () => window.removeEventListener('vetra_resume_synced', handleSync)
+    window.addEventListener('vetra_role_updated', handleRoleUpdate)
+    return () => {
+      window.removeEventListener('vetra_resume_synced', handleSync)
+      window.removeEventListener('vetra_role_updated', handleRoleUpdate)
+    }
   }, [selectedRole])
 
   const radialData = [{ name: 'score', value: overallScore, fill: '#2563EB' }]
@@ -428,7 +451,7 @@ export function SkillGapAnalysisPage() {
                 <SelectValue placeholder="Select a target role" />
               </SelectTrigger>
               <SelectContent>
-                {targetRoles.map((role) => (
+                {availableRoles.map((role) => (
                   <SelectItem key={role} value={role}>
                     {role}
                   </SelectItem>
