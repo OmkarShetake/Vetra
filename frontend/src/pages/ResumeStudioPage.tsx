@@ -174,7 +174,7 @@ export function ResumeStudioPage() {
       )
       if (match) return match
     }
-    return 'spring-boot'
+    return 'java-backend'
   })
   const [overallScore, setOverallScore] = useState<number>(savedData?.overallScore ?? 76)
   const [activeTab, setActiveTab] = useState<string>('alignment')
@@ -379,7 +379,24 @@ export function ResumeStudioPage() {
 
     if (!serverSucceeded) {
       // Graceful client-side text extractor if backend was unreachable
-      const textSample = await file.text().catch(() => '')
+      let textSample = ''
+      try {
+        const arrayBuf = await file.arrayBuffer()
+        const bytes = new Uint8Array(arrayBuf.slice(0, 100000))
+        const chars: string[] = []
+        for (let i = 0; i < bytes.length; i++) {
+          const b = bytes[i]
+          if ((b >= 32 && b <= 126) || b === 10 || b === 13) {
+            chars.push(String.fromCharCode(b))
+          } else {
+            chars.push(' ')
+          }
+        }
+        textSample = chars.join('')
+      } catch {
+        textSample = await file.text().catch(() => '')
+      }
+
       const lower = (file.name + ' ' + textSample).toLowerCase()
 
       const detected: string[] = []
@@ -401,18 +418,18 @@ export function ResumeStudioPage() {
       // Infer role from detected skills
       let detectedRole = 'Java Backend Developer'
       if (detected.some(s => ['React', 'Next.js', 'Tailwind CSS', 'Redux'].includes(s))) detectedRole = 'Frontend Developer'
-      else if (detected.some(s => ['AWS', 'Kubernetes', 'CI/CD Pipelines', 'Terraform'].includes(s))) detectedRole = 'Cloud / DevOps Engineer'
-      else if (detected.some(s => ['Python', 'FastAPI', 'Pandas', 'PyTorch'].includes(s))) detectedRole = 'AI / Machine Learning Engineer'
-      else if (detected.some(s => ['Flutter', 'Kotlin', 'Android'].includes(s))) detectedRole = 'Mobile Developer'
+      else if (detected.some(s => ['AWS', 'Kubernetes', 'CI/CD Pipelines', 'Terraform'].includes(s))) detectedRole = 'Cloud & DevOps Engineer'
+      else if (detected.some(s => ['Python', 'FastAPI', 'Pandas', 'PyTorch'].includes(s))) detectedRole = 'Data & AI/ML Engineer'
+      else if (detected.some(s => ['Flutter', 'Kotlin', 'Android'].includes(s))) detectedRole = 'Mobile Application Developer'
       else if (detected.some(s => ['React', 'JavaScript'].includes(s)) && detected.some(s => ['Node.js', 'Java', 'SQL'].includes(s))) detectedRole = 'Full Stack Developer'
 
       const matchedRoleKey = Object.keys(ROLE_TAXONOMY).find(k =>
         ROLE_TAXONOMY[k].title.toLowerCase() === detectedRole.toLowerCase() ||
         detectedRole.toLowerCase().includes(ROLE_TAXONOMY[k].title.toLowerCase())
-      ) || 'spring-boot'
+      ) || 'java-backend'
       setSelectedRole(matchedRoleKey)
 
-      const fallbackScore = Math.min(95, Math.max(68, 62 + finalSkills.length * 3))
+      const fallbackScore = Math.min(95, Math.max(70, 65 + finalSkills.length * 3))
       setOverallScore(fallbackScore)
 
       const fallbackAnalysis = {
@@ -440,7 +457,10 @@ export function ResumeStudioPage() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file) processFile(file)
+    if (file) {
+      processFile(file)
+    }
+    e.target.value = ''
   }
 
   const handleAcceptRecommendation = (id: string) => {
@@ -503,6 +523,7 @@ export function ResumeStudioPage() {
           type="file"
           accept=".pdf,.docx,.txt"
           onChange={handleFileChange}
+          onClick={(e) => { (e.target as HTMLInputElement).value = '' }}
           className="hidden"
         />
 
