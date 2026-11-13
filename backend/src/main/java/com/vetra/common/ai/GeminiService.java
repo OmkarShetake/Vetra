@@ -69,10 +69,18 @@ public class GeminiService {
      * Prompt Gemini to rewrite a weak resume bullet point into an impact-oriented statement.
      */
     public String rewriteBulletPoint(String bulletPoint) {
+        return rewriteBulletPoint(bulletPoint, "Software Engineer");
+    }
+
+    /**
+     * Prompt Gemini to rewrite a weak resume bullet point with specific role context.
+     */
+    public String rewriteBulletPoint(String bulletPoint, String targetRole) {
         if (!isConfigured()) return null;
 
+        String role = (targetRole != null && !targetRole.isBlank()) ? targetRole : "Software Engineer";
         String prompt = """
-            You are a senior software engineering career coach.
+            You are a senior software engineering career coach and technical recruiter for %s roles.
             Rewrite this resume bullet point using the formula: Action Verb + Architecture/Tool + Quantifiable Outcome.
             Do not fabricate statistics or false claims; suggest how to frame the technical scope cleanly.
             
@@ -80,7 +88,7 @@ public class GeminiService {
             \"%s\"
             
             Provide 2 improved alternatives and a brief explanation why.
-            """.formatted(bulletPoint);
+            """.formatted(role, bulletPoint);
 
         return callGemini(prompt);
     }
