@@ -115,8 +115,8 @@ const SKILL_KEYWORDS = [
   'Kotlin', 'Android SDK', 'Flutter'
 ]
 
-// Demo user skills for comparison
-const USER_DEMONSTRATED_SKILLS = ['Java', 'OOP', 'Spring Boot', 'PostgreSQL', 'Git', 'REST APIs']
+// Initial fallback candidate skills
+const DEFAULT_CANDIDATE_SKILLS = ['Java', 'OOP', 'Spring Boot', 'PostgreSQL', 'Git', 'REST APIs']
 
 export function JobIntelligencePage() {
   const [jobsList, setJobsList] = useState<Job[]>(initialJobs)
@@ -126,8 +126,29 @@ export function JobIntelligencePage() {
   const [analyzingJob, setAnalyzingJob] = useState<Job | null>(null)
   const [importing, setImporting] = useState(false)
 
+  const [candidateSkills, setCandidateSkills] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem('vetra_latest_resume_analysis')
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        if (Array.isArray(parsed?.extractedSkills) && parsed.extractedSkills.length > 0) {
+          return parsed.extractedSkills
+        }
+      }
+    } catch {}
+    return DEFAULT_CANDIDATE_SKILLS
+  })
+
   useEffect(() => {
     fetchJobs()
+
+    const handleSync = (e: any) => {
+      if (Array.isArray(e?.detail?.extractedSkills) && e.detail.extractedSkills.length > 0) {
+        setCandidateSkills(e.detail.extractedSkills)
+      }
+    }
+    window.addEventListener('vetra_resume_synced', handleSync)
+    return () => window.removeEventListener('vetra_resume_synced', handleSync)
   }, [])
 
   const fetchJobs = async () => {
@@ -443,10 +464,10 @@ export function JobIntelligencePage() {
         <DialogContent className="max-w-lg">
           {analyzingJob && (() => {
             const matchedRequired = analyzingJob.requiredSkills.filter(s =>
-              USER_DEMONSTRATED_SKILLS.some(us => us.toLowerCase() === s.toLowerCase())
+              candidateSkills.some(us => us.toLowerCase() === s.toLowerCase())
             )
             const missingRequired = analyzingJob.requiredSkills.filter(s =>
-              !USER_DEMONSTRATED_SKILLS.some(us => us.toLowerCase() === s.toLowerCase())
+              !candidateSkills.some(us => us.toLowerCase() === s.toLowerCase())
             )
             const fitPercentage = Math.round((matchedRequired.length / Math.max(1, analyzingJob.requiredSkills.length)) * 100)
 

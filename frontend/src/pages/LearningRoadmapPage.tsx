@@ -64,118 +64,275 @@ interface LearningPhase {
 }
 
 // ---------------------------------------------------------------------------
-// Demo data
+// Multi-Track Curricula
 // ---------------------------------------------------------------------------
 
-const initialPhases: LearningPhase[] = [
-  {
-    id: 'phase-1',
-    number: 1,
-    title: 'Java Core',
-    description: 'Master the fundamentals of Java including syntax, data types, control flow, and exception handling.',
-    estimatedHours: 40,
-    icon: Code2,
-    tasks: [
-      { id: 't1-1', title: 'Java syntax, variables, and data types', priority: 'HIGH', estimatedHours: 6, completed: true, resourceUrl: 'https://docs.oracle.com/javase/tutorial/' },
-      { id: 't1-2', title: 'Control flow and loops', priority: 'HIGH', estimatedHours: 5, completed: true, resourceUrl: 'https://docs.oracle.com/javase/tutorial/java/nutsandbolts/flow.html' },
-      { id: 't1-3', title: 'Arrays and strings', priority: 'MEDIUM', estimatedHours: 4, completed: true, resourceUrl: 'https://docs.oracle.com/javase/tutorial/java/data/arrays.html' },
-      { id: 't1-4', title: 'Exception handling', priority: 'HIGH', estimatedHours: 5, completed: false, resourceUrl: 'https://docs.oracle.com/javase/tutorial/essential/exceptions/' },
-      { id: 't1-5', title: 'Build a console-based calculator app', priority: 'MEDIUM', estimatedHours: 8, completed: false },
-    ],
+const TRACK_CURRICULA: Record<string, { roleTitle: string; phases: LearningPhase[] }> = {
+  'java-backend': {
+    roleTitle: 'Java Backend Developer',
+    phases: [
+      {
+        id: 'phase-1',
+        number: 1,
+        title: 'Java Core',
+        description: 'Master the fundamentals of Java including syntax, data types, control flow, and exception handling.',
+        estimatedHours: 40,
+        icon: Code2,
+        tasks: [
+          { id: 't1-1', title: 'Java syntax, variables, and data types', priority: 'HIGH', estimatedHours: 6, completed: true, resourceUrl: 'https://docs.oracle.com/javase/tutorial/' },
+          { id: 't1-2', title: 'Control flow and loops', priority: 'HIGH', estimatedHours: 5, completed: true, resourceUrl: 'https://docs.oracle.com/javase/tutorial/java/nutsandbolts/flow.html' },
+          { id: 't1-3', title: 'Arrays and strings', priority: 'MEDIUM', estimatedHours: 4, completed: true, resourceUrl: 'https://docs.oracle.com/javase/tutorial/java/data/arrays.html' },
+          { id: 't1-4', title: 'Exception handling & custom exceptions', priority: 'HIGH', estimatedHours: 5, completed: false, resourceUrl: 'https://docs.oracle.com/javase/tutorial/essential/exceptions/' },
+          { id: 't1-5', title: 'Build a console-based calculator app', priority: 'MEDIUM', estimatedHours: 8, completed: false },
+        ],
+      },
+      {
+        id: 'phase-2',
+        number: 2,
+        title: 'OOP and Collections Framework',
+        description: 'Deepen your understanding of object-oriented programming and Java Collections Framework.',
+        estimatedHours: 35,
+        icon: Boxes,
+        tasks: [
+          { id: 't2-1', title: 'Classes, objects, constructors, and encapsulation', priority: 'HIGH', estimatedHours: 6, completed: false, resourceUrl: 'https://docs.oracle.com/javase/tutorial/java/concepts/' },
+          { id: 't2-2', title: 'Inheritance, polymorphism, and abstract classes', priority: 'HIGH', estimatedHours: 7, completed: false, resourceUrl: 'https://docs.oracle.com/javase/tutorial/java/IandI/' },
+          { id: 't2-3', title: 'Collections Framework (List, Set, Map, Queue)', priority: 'HIGH', estimatedHours: 8, completed: false, resourceUrl: 'https://docs.oracle.com/javase/tutorial/collections/' },
+          { id: 't2-4', title: 'Generics and lambda expressions (Streams API)', priority: 'MEDIUM', estimatedHours: 5, completed: false },
+          { id: 't2-5', title: 'Build a student management system using OOP', priority: 'MEDIUM', estimatedHours: 4, completed: false },
+        ],
+      },
+      {
+        id: 'phase-3',
+        number: 3,
+        title: 'SQL and PostgreSQL Mastery',
+        description: 'Learn relational database fundamentals, indexing, transactions, and PostgreSQL.',
+        estimatedHours: 30,
+        icon: Database,
+        tasks: [
+          { id: 't3-1', title: 'SQL fundamentals (CRUD, WHERE, GROUP BY)', priority: 'HIGH', estimatedHours: 6, completed: false, resourceUrl: 'https://www.postgresqltutorial.com/' },
+          { id: 't3-2', title: 'Joins, subqueries, and window functions', priority: 'HIGH', estimatedHours: 7, completed: false, resourceUrl: 'https://www.postgresqltutorial.com/postgresql-joins/' },
+          { id: 't3-3', title: 'Relational schema design and 3NF normalization', priority: 'MEDIUM', estimatedHours: 5, completed: false },
+          { id: 't3-4', title: 'B-tree indexes, execution plans, and query optimization', priority: 'MEDIUM', estimatedHours: 5, completed: false },
+          { id: 't3-5', title: 'Set up PostgreSQL and build a relational store schema', priority: 'LOW', estimatedHours: 7, completed: false },
+        ],
+      },
+      {
+        id: 'phase-4',
+        number: 4,
+        title: 'Spring Boot & RESTful APIs',
+        description: 'Build enterprise backend microservices with Spring Boot and Spring Data JPA.',
+        estimatedHours: 50,
+        icon: Server,
+        tasks: [
+          { id: 't4-1', title: 'Spring Boot setup, configuration & dependency injection', priority: 'HIGH', estimatedHours: 6, completed: false, resourceUrl: 'https://spring.io/guides/gs/spring-boot/' },
+          { id: 't4-2', title: 'REST controller design, DTOs, and global exception handling', priority: 'HIGH', estimatedHours: 8, completed: false, resourceUrl: 'https://spring.io/guides/gs/rest-service/' },
+          { id: 't4-3', title: 'Spring Data JPA repositories, JPQL, and pagination', priority: 'HIGH', estimatedHours: 10, completed: false, resourceUrl: 'https://spring.io/guides/gs/accessing-data-jpa/' },
+          { id: 't4-4', title: 'Spring Security with JWT authentication flow', priority: 'HIGH', estimatedHours: 12, completed: false },
+          { id: 't4-5', title: 'Build a complete production-grade CRUD REST API project', priority: 'HIGH', estimatedHours: 14, completed: false },
+        ],
+      },
+      {
+        id: 'phase-5',
+        number: 5,
+        title: 'Docker Containerization & Testing',
+        description: 'Package microservices with Docker and write rigorous tests with JUnit 5 and Mockito.',
+        estimatedHours: 35,
+        icon: Container,
+        tasks: [
+          { id: 't6-1', title: 'Docker containerization & multi-stage Dockerfiles', priority: 'HIGH', estimatedHours: 6, completed: false, resourceUrl: 'https://docs.docker.com/get-started/' },
+          { id: 't6-2', title: 'Docker Compose for multi-container apps (App + DB + Redis)', priority: 'MEDIUM', estimatedHours: 6, completed: false },
+          { id: 't6-3', title: 'JUnit 5 unit testing & Mockito mocks', priority: 'HIGH', estimatedHours: 7, completed: false, resourceUrl: 'https://junit.org/junit5/docs/current/user-guide/' },
+          { id: 't6-4', title: 'MockMvc integration testing with Testcontainers', priority: 'MEDIUM', estimatedHours: 6, completed: false },
+          { id: 't6-5', title: 'Containerize and publish backend project on GitHub', priority: 'HIGH', estimatedHours: 10, completed: false },
+        ],
+      },
+    ]
   },
-  {
-    id: 'phase-2',
-    number: 2,
-    title: 'OOP and Collections',
-    description: 'Deepen your understanding of object-oriented programming and Java Collections Framework.',
-    estimatedHours: 35,
-    icon: Boxes,
-    tasks: [
-      { id: 't2-1', title: 'Classes, objects, and constructors', priority: 'HIGH', estimatedHours: 6, completed: false, resourceUrl: 'https://docs.oracle.com/javase/tutorial/java/concepts/' },
-      { id: 't2-2', title: 'Inheritance, polymorphism, and encapsulation', priority: 'HIGH', estimatedHours: 7, completed: false, resourceUrl: 'https://docs.oracle.com/javase/tutorial/java/IandI/' },
-      { id: 't2-3', title: 'Interfaces and abstract classes', priority: 'MEDIUM', estimatedHours: 5, completed: false },
-      { id: 't2-4', title: 'Collections Framework (List, Set, Map, Queue)', priority: 'HIGH', estimatedHours: 8, completed: false, resourceUrl: 'https://docs.oracle.com/javase/tutorial/collections/' },
-      { id: 't2-5', title: 'Generics and lambda expressions', priority: 'MEDIUM', estimatedHours: 5, completed: false },
-      { id: 't2-6', title: 'Build a student management system using OOP', priority: 'MEDIUM', estimatedHours: 4, completed: false },
-    ],
+  'frontend': {
+    roleTitle: 'Frontend Developer',
+    phases: [
+      {
+        id: 'fe-phase-1',
+        number: 1,
+        title: 'Modern JavaScript & TypeScript Foundations',
+        description: 'Master ES6+ syntax, asynchronous programming, DOM APIs, and strict TypeScript types.',
+        estimatedHours: 35,
+        icon: Code2,
+        tasks: [
+          { id: 'fe-1-1', title: 'ES6+ features: destructuring, modules, arrow functions, promises', priority: 'HIGH', estimatedHours: 6, completed: true, resourceUrl: 'https://javascript.info/' },
+          { id: 'fe-1-2', title: 'TypeScript interfaces, generics, type aliases, and unions', priority: 'HIGH', estimatedHours: 8, completed: false, resourceUrl: 'https://www.typescriptlang.org/docs/' },
+          { id: 'fe-1-3', title: 'Async/Await, fetch API, and JSON serialization', priority: 'HIGH', estimatedHours: 6, completed: false },
+          { id: 'fe-1-4', title: 'Build an interactive CLI or pure TS utility library', priority: 'MEDIUM', estimatedHours: 8, completed: false },
+        ]
+      },
+      {
+        id: 'fe-phase-2',
+        number: 2,
+        title: 'React Core & Component Architecture',
+        description: 'Build responsive user interfaces using React 18, JSX, custom hooks, and state lifecycles.',
+        estimatedHours: 45,
+        icon: Boxes,
+        tasks: [
+          { id: 'fe-2-1', title: 'React component hierarchy, props, and JSX patterns', priority: 'HIGH', estimatedHours: 8, completed: false, resourceUrl: 'https://react.dev/' },
+          { id: 'fe-2-2', title: 'Hooks: useState, useEffect, useMemo, useCallback, useRef', priority: 'HIGH', estimatedHours: 10, completed: false },
+          { id: 'fe-2-3', title: 'Custom hooks for data fetching and debounce logic', priority: 'HIGH', estimatedHours: 7, completed: false },
+          { id: 'fe-2-4', title: 'Modern styling with Tailwind CSS and CSS modules', priority: 'MEDIUM', estimatedHours: 6, completed: false },
+          { id: 'fe-2-5', title: 'Build an interactive dashboard component library', priority: 'HIGH', estimatedHours: 14, completed: false },
+        ]
+      },
+      {
+        id: 'fe-phase-3',
+        number: 3,
+        title: 'State Management & API Integration',
+        description: 'Manage global application state and integrate REST / GraphQL backend APIs.',
+        estimatedHours: 35,
+        icon: Server,
+        tasks: [
+          { id: 'fe-3-1', title: 'Global state with Zustand or Redux Toolkit', priority: 'HIGH', estimatedHours: 8, completed: false },
+          { id: 'fe-3-2', title: 'TanStack Query (React Query) for server state caching', priority: 'HIGH', estimatedHours: 8, completed: false },
+          { id: 'fe-3-3', title: 'Form handling with React Hook Form and Zod validation', priority: 'HIGH', estimatedHours: 7, completed: false },
+          { id: 'fe-3-4', title: 'Routing with React Router v6 or TanStack Router', priority: 'MEDIUM', estimatedHours: 5, completed: false },
+        ]
+      },
+      {
+        id: 'fe-phase-4',
+        number: 4,
+        title: 'Next.js & Production Deployment',
+        description: 'Full-stack frontend development with Next.js App Router, SSR, and Vercel deployment.',
+        estimatedHours: 40,
+        icon: FolderGit2,
+        tasks: [
+          { id: 'fe-4-1', title: 'Next.js App Router, Server Components & Client Components', priority: 'HIGH', estimatedHours: 10, completed: false, resourceUrl: 'https://nextjs.org/docs' },
+          { id: 'fe-4-2', title: 'SEO optimization, metadata, and core web vitals performance', priority: 'MEDIUM', estimatedHours: 6, completed: false },
+          { id: 'fe-4-3', title: 'Automated testing with Vitest and React Testing Library', priority: 'HIGH', estimatedHours: 8, completed: false },
+          { id: 'fe-4-4', title: 'Deploy a live portfolio showcase web app with CI/CD', priority: 'HIGH', estimatedHours: 16, completed: false },
+        ]
+      }
+    ]
   },
-  {
-    id: 'phase-3',
-    number: 3,
-    title: 'SQL and PostgreSQL',
-    description: 'Learn relational database fundamentals and PostgreSQL for backend development.',
-    estimatedHours: 30,
-    icon: Database,
-    tasks: [
-      { id: 't3-1', title: 'SQL fundamentals (SELECT, INSERT, UPDATE, DELETE)', priority: 'HIGH', estimatedHours: 6, completed: false, resourceUrl: 'https://www.postgresqltutorial.com/' },
-      { id: 't3-2', title: 'Joins, subqueries, and aggregation', priority: 'HIGH', estimatedHours: 7, completed: false, resourceUrl: 'https://www.postgresqltutorial.com/postgresql-joins/' },
-      { id: 't3-3', title: 'Database design and normalization', priority: 'MEDIUM', estimatedHours: 5, completed: false },
-      { id: 't3-4', title: 'Indexes and query optimization', priority: 'MEDIUM', estimatedHours: 5, completed: false },
-      { id: 't3-5', title: 'Set up PostgreSQL and build a sample schema', priority: 'LOW', estimatedHours: 7, completed: false },
-    ],
+  'fullstack': {
+    roleTitle: 'Full Stack Developer',
+    phases: [
+      {
+        id: 'fs-phase-1',
+        number: 1,
+        title: 'Frontend Foundations (React & TypeScript)',
+        description: 'Build dynamic, accessible web frontends with React, TypeScript, and modern styling.',
+        estimatedHours: 40,
+        icon: Code2,
+        tasks: [
+          { id: 'fs-1-1', title: 'TypeScript mastery for full-stack developers', priority: 'HIGH', estimatedHours: 8, completed: true },
+          { id: 'fs-1-2', title: 'React 18 components, hooks, and responsive design', priority: 'HIGH', estimatedHours: 12, completed: false },
+          { id: 'fs-1-3', title: 'Tailwind CSS and component libraries (shadcn/ui)', priority: 'MEDIUM', estimatedHours: 6, completed: false },
+        ]
+      },
+      {
+        id: 'fs-phase-2',
+        number: 2,
+        title: 'Backend Services (Node.js & Express / Spring Boot)',
+        description: 'Architect scalable backend APIs, authentication middleware, and business logic.',
+        estimatedHours: 45,
+        icon: Server,
+        tasks: [
+          { id: 'fs-2-1', title: 'RESTful API architectural patterns and status conventions', priority: 'HIGH', estimatedHours: 8, completed: false },
+          { id: 'fs-2-2', title: 'JWT authentication, refresh tokens, and password hashing', priority: 'HIGH', estimatedHours: 10, completed: false },
+          { id: 'fs-2-3', title: 'Database modeling with PostgreSQL & Prisma/JPA', priority: 'HIGH', estimatedHours: 12, completed: false },
+        ]
+      },
+      {
+        id: 'fs-phase-3',
+        number: 3,
+        title: 'End-to-End Capstone & Deployment',
+        description: 'Unify frontend and backend into a containerized, production-deployed platform.',
+        estimatedHours: 45,
+        icon: FolderGit2,
+        tasks: [
+          { id: 'fs-3-1', title: 'Docker containerization for frontend and backend microservices', priority: 'HIGH', estimatedHours: 8, completed: false },
+          { id: 'fs-3-2', title: 'Continuous integration (CI/CD) with GitHub Actions', priority: 'MEDIUM', estimatedHours: 7, completed: false },
+          { id: 'fs-3-3', title: 'Deploy full stack platform to cloud (Render / AWS)', priority: 'HIGH', estimatedHours: 15, completed: false },
+        ]
+      }
+    ]
   },
-  {
-    id: 'phase-4',
-    number: 4,
-    title: 'Spring Boot and REST APIs',
-    description: 'Build production-ready backend services with Spring Boot and RESTful API design.',
-    estimatedHours: 50,
-    icon: Server,
-    tasks: [
-      { id: 't4-1', title: 'Spring Boot project setup and configuration', priority: 'HIGH', estimatedHours: 6, completed: false, resourceUrl: 'https://spring.io/guides/gs/spring-boot/' },
-      { id: 't4-2', title: 'REST controller design and best practices', priority: 'HIGH', estimatedHours: 8, completed: false, resourceUrl: 'https://spring.io/guides/gs/rest-service/' },
-      { id: 't4-3', title: 'Spring Data JPA and repository patterns', priority: 'HIGH', estimatedHours: 10, completed: false, resourceUrl: 'https://spring.io/guides/gs/accessing-data-jpa/' },
-      { id: 't4-4', title: 'DTOs, validation, and exception handling', priority: 'MEDIUM', estimatedHours: 8, completed: false },
-      { id: 't4-5', title: 'Build a complete CRUD REST API project', priority: 'HIGH', estimatedHours: 18, completed: false },
-    ],
+  'devops': {
+    roleTitle: 'Cloud & DevOps Engineer',
+    phases: [
+      {
+        id: 'do-phase-1',
+        number: 1,
+        title: 'Linux Systems & Automation Scripting',
+        description: 'Command line mastery, file systems, permissions, shell scripting, and networking.',
+        estimatedHours: 35,
+        icon: Code2,
+        tasks: [
+          { id: 'do-1-1', title: 'Linux administration, systemd, bash scripting, and cron', priority: 'HIGH', estimatedHours: 10, completed: false },
+          { id: 'do-1-2', title: 'Networking basics: DNS, TCP/IP, TLS/SSL, reverse proxies (Nginx)', priority: 'HIGH', estimatedHours: 8, completed: false },
+          { id: 'do-1-3', title: 'Git workflows: branch protections, rebasing, and semantic release', priority: 'MEDIUM', estimatedHours: 6, completed: true },
+        ]
+      },
+      {
+        id: 'do-phase-2',
+        number: 2,
+        title: 'Docker & Kubernetes Orchestration',
+        description: 'Container architecture, images, orchestration, pods, services, and ingress.',
+        estimatedHours: 45,
+        icon: Container,
+        tasks: [
+          { id: 'do-2-1', title: 'Docker image optimization, multi-stage builds, and non-root users', priority: 'HIGH', estimatedHours: 8, completed: false },
+          { id: 'do-2-2', title: 'Kubernetes architecture: Pods, Deployments, Services, ConfigMaps', priority: 'HIGH', estimatedHours: 14, completed: false },
+          { id: 'do-2-3', title: 'Ingress controllers, cert-manager, and secret management', priority: 'HIGH', estimatedHours: 8, completed: false },
+        ]
+      },
+      {
+        id: 'do-phase-3',
+        number: 3,
+        title: 'CI/CD Pipelines & Cloud Infrastructure (AWS / Terraform)',
+        description: 'Automate build/test/deploy cycles and declare infrastructure as code.',
+        estimatedHours: 45,
+        icon: FolderGit2,
+        tasks: [
+          { id: 'do-3-1', title: 'GitHub Actions automated build, test, and container push workflows', priority: 'HIGH', estimatedHours: 10, completed: false },
+          { id: 'do-3-2', title: 'Terraform modules for provisioning VPC, EC2, RDS, and S3', priority: 'HIGH', estimatedHours: 14, completed: false },
+          { id: 'do-3-3', title: 'Observability: Prometheus metrics, Grafana dashboards, and logging', priority: 'MEDIUM', estimatedHours: 8, completed: false },
+        ]
+      }
+    ]
   },
-  {
-    id: 'phase-5',
-    number: 5,
-    title: 'Spring Security',
-    description: 'Secure your applications with authentication, authorization, and JWT-based tokens.',
-    estimatedHours: 25,
-    icon: ShieldCheck,
-    tasks: [
-      { id: 't5-1', title: 'Spring Security basics and filter chain', priority: 'HIGH', estimatedHours: 6, completed: false, resourceUrl: 'https://spring.io/guides/gs/securing-web/' },
-      { id: 't5-2', title: 'JWT authentication flow', priority: 'HIGH', estimatedHours: 7, completed: false, resourceUrl: 'https://docs.spring.io/spring-security/reference/' },
-      { id: 't5-3', title: 'Role-based authorization', priority: 'MEDIUM', estimatedHours: 5, completed: false },
-      { id: 't5-4', title: 'Add JWT auth to your REST API project', priority: 'HIGH', estimatedHours: 7, completed: false },
-    ],
-  },
-  {
-    id: 'phase-6',
-    number: 6,
-    title: 'Docker and Testing',
-    description: 'Containerize your applications and write reliable tests with JUnit and MockMvc.',
-    estimatedHours: 30,
-    icon: Container,
-    tasks: [
-      { id: 't6-1', title: 'Docker fundamentals and Dockerfile', priority: 'HIGH', estimatedHours: 6, completed: false, resourceUrl: 'https://docs.docker.com/get-started/' },
-      { id: 't6-2', title: 'Docker Compose for multi-container apps', priority: 'MEDIUM', estimatedHours: 5, completed: false, resourceUrl: 'https://docs.docker.com/compose/' },
-      { id: 't6-3', title: 'JUnit 5 unit testing', priority: 'HIGH', estimatedHours: 7, completed: false, resourceUrl: 'https://junit.org/junit5/docs/current/user-guide/' },
-      { id: 't6-4', title: 'MockMvc integration testing', priority: 'MEDIUM', estimatedHours: 6, completed: false },
-      { id: 't6-5', title: 'Containerize your REST API with Docker', priority: 'LOW', estimatedHours: 6, completed: false },
-    ],
-  },
-  {
-    id: 'phase-7',
-    number: 7,
-    title: 'Backend Project Development',
-    description: 'Build a portfolio-worthy backend project that demonstrates all learned skills.',
-    estimatedHours: 40,
-    icon: FolderGit2,
-    tasks: [
-      { id: 't7-1', title: 'Design the project architecture and database schema', priority: 'HIGH', estimatedHours: 6, completed: false },
-      { id: 't7-2', title: 'Implement core API endpoints', priority: 'HIGH', estimatedHours: 14, completed: false },
-      { id: 't7-3', title: 'Add authentication and authorization', priority: 'HIGH', estimatedHours: 8, completed: false },
-      { id: 't7-4', title: 'Write comprehensive tests', priority: 'MEDIUM', estimatedHours: 6, completed: false },
-      { id: 't7-5', title: 'Containerize and document the project', priority: 'MEDIUM', estimatedHours: 6, completed: false },
-    ],
-  },
-]
+  'data-ai': {
+    roleTitle: 'Data & AI/ML Engineer',
+    phases: [
+      {
+        id: 'ai-phase-1',
+        number: 1,
+        title: 'Python Mastery & Data Processing',
+        description: 'Advanced Python, data structures, Pandas dataframes, NumPy arrays, and SQL analytics.',
+        estimatedHours: 40,
+        icon: Code2,
+        tasks: [
+          { id: 'ai-1-1', title: 'Python type hints, generators, context managers, and async IO', priority: 'HIGH', estimatedHours: 8, completed: false },
+          { id: 'ai-1-2', title: 'Pandas & NumPy data manipulation, aggregation, and cleaning', priority: 'HIGH', estimatedHours: 12, completed: false },
+          { id: 'ai-1-3', title: 'Analytical SQL: window functions, CTEs, and query plans', priority: 'HIGH', estimatedHours: 8, completed: false },
+        ]
+      },
+      {
+        id: 'ai-phase-2',
+        number: 2,
+        title: 'FastAPI & LLM AI Pipeline Engineering',
+        description: 'Build low-latency AI microservices, RAG architectures, and vector embeddings.',
+        estimatedHours: 50,
+        icon: Boxes,
+        tasks: [
+          { id: 'ai-2-1', title: 'FastAPI REST microservices with Pydantic schemas and dependency injection', priority: 'HIGH', estimatedHours: 10, completed: false },
+          { id: 'ai-2-2', title: 'Vector embeddings, chunking strategies, and vector databases (pgvector / Chroma)', priority: 'HIGH', estimatedHours: 12, completed: false },
+          { id: 'ai-2-3', title: 'LLM prompt engineering, function calling, and structured JSON output', priority: 'HIGH', estimatedHours: 10, completed: false },
+          { id: 'ai-2-4', title: 'Build and deploy an automated RAG document question-answering agent', priority: 'HIGH', estimatedHours: 18, completed: false },
+        ]
+      }
+    ]
+  }
+}
 
-const targetRole = 'Java Backend Developer'
+const initialPhases = TRACK_CURRICULA['java-backend'].phases
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -197,7 +354,73 @@ function priorityBadgeVariant(priority: Priority) {
 // ---------------------------------------------------------------------------
 
 export function LearningRoadmapPage() {
-  const [phases, setPhases] = useState<LearningPhase[]>(initialPhases)
+  const { user } = useAuth()
+
+  // Detect initial track from resume or profile
+  const detectInitialTrack = (): string => {
+    try {
+      const stored = localStorage.getItem('vetra_target_role')
+      if (stored) {
+        const lower = stored.toLowerCase()
+        if (lower.includes('front')) return 'frontend'
+        if (lower.includes('full')) return 'fullstack'
+        if (lower.includes('devops') || lower.includes('cloud')) return 'devops'
+        if (lower.includes('ai') || lower.includes('data')) return 'data-ai'
+        if (lower.includes('java') || lower.includes('backend') || lower.includes('spring')) return 'java-backend'
+      }
+      const raw = localStorage.getItem('vetra_latest_resume_analysis')
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        if (parsed?.detectedRole) {
+          const lower = parsed.detectedRole.toLowerCase()
+          if (lower.includes('front')) return 'frontend'
+          if (lower.includes('full')) return 'fullstack'
+          if (lower.includes('devops') || lower.includes('cloud')) return 'devops'
+          if (lower.includes('ai') || lower.includes('data')) return 'data-ai'
+          if (lower.includes('java') || lower.includes('backend') || lower.includes('spring')) return 'java-backend'
+        }
+      }
+      if (user?.targetRole) {
+        const lower = user.targetRole.toLowerCase()
+        if (lower.includes('front')) return 'frontend'
+        if (lower.includes('full')) return 'fullstack'
+        if (lower.includes('devops') || lower.includes('cloud')) return 'devops'
+        if (lower.includes('ai') || lower.includes('data')) return 'data-ai'
+        if (lower.includes('java') || lower.includes('backend') || lower.includes('spring')) return 'java-backend'
+      }
+    } catch {}
+    return 'java-backend'
+  }
+
+  const [selectedTrack, setSelectedTrack] = useState<string>(detectInitialTrack)
+  const currentCurriculum = TRACK_CURRICULA[selectedTrack] || TRACK_CURRICULA['java-backend']
+  const [phases, setPhases] = useState<LearningPhase[]>(currentCurriculum.phases)
+
+  // Listen to resume sync events
+  useEffect(() => {
+    const handleSync = (e: any) => {
+      const roleStr = e?.detail?.detectedRole || ''
+      if (roleStr) {
+        const lower = roleStr.toLowerCase()
+        let trackKey = 'java-backend'
+        if (lower.includes('front')) trackKey = 'frontend'
+        else if (lower.includes('full')) trackKey = 'fullstack'
+        else if (lower.includes('devops') || lower.includes('cloud')) trackKey = 'devops'
+        else if (lower.includes('ai') || lower.includes('data')) trackKey = 'data-ai'
+        setSelectedTrack(trackKey)
+        setPhases(TRACK_CURRICULA[trackKey]?.phases || TRACK_CURRICULA['java-backend'].phases)
+      }
+    }
+    window.addEventListener('vetra_resume_synced', handleSync)
+    return () => window.removeEventListener('vetra_resume_synced', handleSync)
+  }, [])
+
+  const handleTrackChange = (newTrack: string) => {
+    setSelectedTrack(newTrack)
+    const nextCurriculum = TRACK_CURRICULA[newTrack] || TRACK_CURRICULA['java-backend']
+    setPhases(nextCurriculum.phases)
+    toast.success(`Loaded personalized curriculum for ${nextCurriculum.roleTitle}`)
+  }
 
   const toggleTask = (phaseId: string, taskId: string) => {
     setPhases((prev) =>
@@ -230,14 +453,29 @@ export function LearningRoadmapPage() {
   return (
     <div className="space-y-6">
       {/* Page header */}
-      <div>
-        <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Learning Roadmap</h1>
-          <Badge variant="muted">Demo Data</Badge>
+      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Learning Roadmap</h1>
+            <Badge variant="teal">Personalized Plan</Badge>
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            A personalized, phased curriculum engineered to bridge your specific skill gaps.
+          </p>
         </div>
-        <p className="mt-1 text-sm text-muted-foreground">
-          A personalized, phased learning plan based on your skill gaps and target role.
-        </p>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-muted-foreground hidden sm:inline">Track:</span>
+          <Select value={selectedTrack} onValueChange={handleTrackChange}>
+            <SelectTrigger className="w-[230px] bg-card border-border font-medium text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(TRACK_CURRICULA).map(([key, item]) => (
+                <SelectItem key={key} value={key}>{item.roleTitle}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Overview card */}
@@ -250,7 +488,7 @@ export function LearningRoadmapPage() {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Target Role</p>
-                <p className="text-sm font-semibold text-foreground">{targetRole}</p>
+                <p className="text-sm font-semibold text-foreground">{currentCurriculum.roleTitle}</p>
               </div>
             </div>
 

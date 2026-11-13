@@ -428,31 +428,45 @@ export function ResumeStudioPage() {
           'Python', 'FastAPI', 'AWS', 'Kubernetes', 'CI/CD Pipelines', 'Linux', 'Flutter', 'Kotlin'
         ]
         allTaxonomy.forEach(skill => {
-          if (lower.includes(skill.toLowerCase())) {
+          const escaped = skill.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+          const regex = new RegExp(`\\b${escaped}\\b`, 'i')
+          if (regex.test(textSample) || regex.test(file.name)) {
             detected.push(skill)
           }
         })
 
-        // If user uploads Java backend resume, guarantee full backend skills
-        if (lower.includes('java') || lower.includes('spring') || lower.includes('backend') || file.name.toLowerCase().includes('java') || file.name.toLowerCase().includes('backend')) {
+        // Infer candidate role from extracted keywords
+        let detectedRole = 'Java Backend Developer'
+        const hasReactOrFrontend = detected.some(s => ['React', 'Next.js', 'Tailwind CSS', 'Redux', 'HTML5 & CSS3'].includes(s))
+        const hasJavaBackend = detected.some(s => ['Java', 'Spring Boot', 'Spring Security', 'Hibernate'].includes(s))
+        const hasDevops = detected.some(s => ['Kubernetes', 'AWS', 'CI/CD Pipelines', 'Linux', 'Terraform'].includes(s))
+        const hasAi = detected.some(s => ['Python', 'FastAPI', 'Pandas', 'PyTorch'].includes(s))
+        const hasMobile = detected.some(s => ['Flutter', 'Kotlin'].includes(s))
+
+        if (hasReactOrFrontend && hasJavaBackend) {
+          detectedRole = 'Full Stack Developer'
+        } else if (hasReactOrFrontend) {
+          detectedRole = 'Frontend Developer'
+        } else if (hasDevops && !hasJavaBackend) {
+          detectedRole = 'Cloud & DevOps Engineer'
+        } else if (hasAi && !hasJavaBackend) {
+          detectedRole = 'Data & AI/ML Engineer'
+        } else if (hasMobile) {
+          detectedRole = 'Mobile Application Developer'
+        } else if (hasJavaBackend) {
+          detectedRole = 'Java Backend Developer'
+        }
+
+        // If Java backend was identified, ensure core competencies are populated if missing
+        if (detectedRole === 'Java Backend Developer') {
           ['Java', 'Spring Boot', 'REST APIs', 'SQL', 'Git', 'PostgreSQL', 'Docker', 'OOP'].forEach(s => {
             if (!detected.includes(s)) detected.push(s)
           })
         }
 
-        const finalSkills = detected.length >= 3 ? detected : DEFAULT_EXTRACTED_SKILLS
-
-        // Infer role from detected skills
-        let detectedRole = 'Java Backend Developer'
-        if (detected.some(s => ['React', 'Next.js', 'Tailwind CSS', 'Redux'].includes(s)) && !detected.some(s => ['Java', 'Spring Boot'].includes(s))) {
-          detectedRole = 'Frontend Developer'
-        } else if (detected.some(s => ['AWS', 'Kubernetes', 'CI/CD Pipelines', 'Terraform'].includes(s)) && !detected.some(s => ['Java', 'Spring Boot'].includes(s))) {
-          detectedRole = 'Cloud & DevOps Engineer'
-        } else if (detected.some(s => ['Python', 'FastAPI', 'Pandas', 'PyTorch'].includes(s))) {
-          detectedRole = 'Data & AI/ML Engineer'
-        } else if (detected.some(s => ['Flutter', 'Kotlin', 'Android'].includes(s))) {
-          detectedRole = 'Mobile Application Developer'
-        }
+        const finalSkills = detected.length >= 3 ? detected : (detectedRole === 'Frontend Developer'
+          ? ['React', 'TypeScript', 'JavaScript', 'HTML5 & CSS3', 'Tailwind CSS', 'Git']
+          : DEFAULT_EXTRACTED_SKILLS)
 
         const fallbackScore = Math.min(95, Math.max(74, 68 + finalSkills.length * 3))
 

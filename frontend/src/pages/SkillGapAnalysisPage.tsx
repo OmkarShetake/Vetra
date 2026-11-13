@@ -178,8 +178,8 @@ function importanceBadgeVariant(importance: Importance) {
 export function SkillGapAnalysisPage() {
   const { user } = useAuth()
   const [selectedRole, setSelectedRole] = useState<string>(() => {
-    const saved = localStorage.getItem('vetra_target_role')
-    if (saved && targetRoles.includes(saved)) return saved
+    const stored = localStorage.getItem('vetra_target_role')
+    if (stored && targetRoles.includes(stored)) return stored
     if (user?.targetRole && targetRoles.includes(user.targetRole)) return user.targetRole
     return targetRoles[0]
   })
@@ -194,18 +194,16 @@ export function SkillGapAnalysisPage() {
 
   useEffect(() => {
     runAnalysis(selectedRole)
-  }, [selectedRole])
 
-  useEffect(() => {
-    const handleResumeSync = (e: any) => {
-      const role = e.detail?.detectedRole || localStorage.getItem('vetra_target_role')
-      if (role && targetRoles.includes(role)) {
-        setSelectedRole(role)
+    const handleSync = (e: any) => {
+      const roleStr = e?.detail?.detectedRole || ''
+      if (roleStr && targetRoles.includes(roleStr)) {
+        setSelectedRole(roleStr)
       }
     }
-    window.addEventListener('vetra_resume_synced', handleResumeSync)
-    return () => window.removeEventListener('vetra_resume_synced', handleResumeSync)
-  }, [])
+    window.addEventListener('vetra_resume_synced', handleSync)
+    return () => window.removeEventListener('vetra_resume_synced', handleSync)
+  }, [selectedRole])
 
   const runAnalysis = async (roleToAnalyze: string) => {
     setLoading(true)

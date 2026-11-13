@@ -29,10 +29,8 @@ export function DashboardPage() {
         if (parsed?.fileName === 'Omkar_Shetake_CV_EPAM.pdf') return null
         return parsed
       }
-      return null
-    } catch {
-      return null
-    }
+    } catch {}
+    return null
   }
 
   const cachedResume = getCachedResume()
@@ -48,7 +46,6 @@ export function DashboardPage() {
   const [evidenceCount, setEvidenceCount] = useState<number>(6)
   const [verifiedCount, setVerifiedCount] = useState<number>(4)
   const [jobCount, setJobCount] = useState<number>(12)
-  const [latestResumeFile, setLatestResumeFile] = useState<string>(cachedResume?.fileName || '')
   const [demandChart, setDemandChart] = useState([
     { skill: 'Java', demand: 89 },
     { skill: 'Spring Boot', demand: 82 },
@@ -66,7 +63,6 @@ export function DashboardPage() {
       if (data?.detectedRole) setTargetRole(data.detectedRole)
       if (data?.overallScore) setReadinessScore(data.overallScore)
       if (data?.extractedSkills?.length) setDemonstratedSkills(data.extractedSkills)
-      if (data?.fileName) setLatestResumeFile(data.fileName)
     }
     window.addEventListener('vetra_resume_synced', handleSync)
     return () => window.removeEventListener('vetra_resume_synced', handleSync)

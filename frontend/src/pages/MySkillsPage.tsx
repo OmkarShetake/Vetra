@@ -73,6 +73,12 @@ export function MySkillsPage() {
 
   useEffect(() => {
     fetchUserSkills()
+
+    const handleSync = () => {
+      fetchUserSkills()
+    }
+    window.addEventListener('vetra_resume_synced', handleSync)
+    return () => window.removeEventListener('vetra_resume_synced', handleSync)
   }, [])
 
   const fetchUserSkills = async () => {
@@ -96,6 +102,21 @@ export function MySkillsPage() {
           }
         })
       })
+
+      // Also incorporate skills extracted from latest resume
+      try {
+        const raw = localStorage.getItem('vetra_latest_resume_analysis')
+        if (raw) {
+          const parsed = JSON.parse(raw)
+          if (Array.isArray(parsed?.extractedSkills)) {
+            parsed.extractedSkills.forEach((s: string) => {
+              if (!skillEvidenceMap[s]) {
+                skillEvidenceMap[s] = { count: 1, verified: false }
+              }
+            })
+          }
+        }
+      } catch {}
 
       if (Object.keys(skillEvidenceMap).length > 0) {
         const dynamicList: SkillItem[] = Object.entries(skillEvidenceMap).map(([name, data], idx) => {
