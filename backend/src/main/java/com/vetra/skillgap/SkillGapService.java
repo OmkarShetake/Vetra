@@ -20,8 +20,8 @@ public class SkillGapService {
         this.evidenceRepository = evidenceRepository;
     }
 
-    private static final Map<String, List<RoleRequirement>> ROLE_TAXONOMY = Map.of(
-        "Java Backend Developer", List.of(
+        private static final Map<String, List<RoleRequirement>> ROLE_TAXONOMY = Map.ofEntries(
+        Map.entry("Java Backend Developer", List.of(
             new RoleRequirement("Java", "CRITICAL", List.of(), "Core programming foundation required for backend systems."),
             new RoleRequirement("OOP", "CRITICAL", List.of("Java"), "Essential for domain modeling, modularity, and clean architecture."),
             new RoleRequirement("SQL", "CRITICAL", List.of(), "Required for writing performant queries, transactions, and data modeling."),
@@ -34,24 +34,72 @@ public class SkillGapService {
             new RoleRequirement("Spring Security", "IMPORTANT", List.of("Spring Boot"), "Secures endpoints with JWT tokens and role-based permissions."),
             new RoleRequirement("Redis", "BENEFICIAL", List.of(), "In-memory caching improves backend read performance."),
             new RoleRequirement("Kafka", "BENEFICIAL", List.of(), "Event streaming decouples asynchronous backend workloads.")
-        ),
-        "Software Engineer", List.of(
+        )),
+        Map.entry("Frontend Developer", List.of(
+            new RoleRequirement("JavaScript", "CRITICAL", List.of(), "Core browser programming language, ES6+, event handling, DOM."),
+            new RoleRequirement("TypeScript", "CRITICAL", List.of("JavaScript"), "Type safety, interfaces, and maintainable large-scale frontend architecture."),
+            new RoleRequirement("React", "CRITICAL", List.of("JavaScript"), "Standard UI library for stateful component hierarchies and hooks."),
+            new RoleRequirement("HTML5 & CSS3", "CRITICAL", List.of(), "Semantic document structure, accessibility, and modern responsive layouts."),
+            new RoleRequirement("Tailwind CSS", "IMPORTANT", List.of("HTML5 & CSS3"), "Utility-first responsive design framework."),
+            new RoleRequirement("REST APIs", "IMPORTANT", List.of(), "Consuming asynchronous backend endpoints and handling loading states."),
+            new RoleRequirement("Next.js", "IMPORTANT", List.of("React"), "Server-side rendering, routing, and SEO optimization."),
+            new RoleRequirement("Git", "IMPORTANT", List.of(), "Version control for team collaboration.")
+        )),
+        Map.entry("Full Stack Developer", List.of(
+            new RoleRequirement("JavaScript", "CRITICAL", List.of(), "Full-stack language bridging frontend and Node.js backend."),
+            new RoleRequirement("TypeScript", "CRITICAL", List.of("JavaScript"), "End-to-end type safety across client and server boundaries."),
+            new RoleRequirement("React", "CRITICAL", List.of("JavaScript"), "Interactive frontend client interface development."),
+            new RoleRequirement("Node.js", "CRITICAL", List.of("JavaScript"), "Scalable asynchronous backend services and APIs."),
+            new RoleRequirement("SQL", "CRITICAL", List.of(), "Relational database querying and schema modeling."),
+            new RoleRequirement("PostgreSQL", "IMPORTANT", List.of("SQL"), "Structured persistent storage."),
+            new RoleRequirement("REST APIs", "IMPORTANT", List.of(), "Clean HTTP API design, validation, and status codes."),
+            new RoleRequirement("Docker", "IMPORTANT", List.of(), "Containerized local and production runtime environments."),
+            new RoleRequirement("Git", "IMPORTANT", List.of(), "Version control and branching.")
+        )),
+        Map.entry("Cloud & DevOps Engineer", List.of(
+            new RoleRequirement("Linux", "CRITICAL", List.of(), "Operating system fundamentals, bash scripting, permissions, process management."),
+            new RoleRequirement("Docker", "CRITICAL", List.of("Linux"), "Containerization, image optimization, multi-stage builds."),
+            new RoleRequirement("Kubernetes", "CRITICAL", List.of("Docker"), "Container orchestration, ingress, deployments, pod lifecycle."),
+            new RoleRequirement("AWS", "CRITICAL", List.of(), "Primary cloud provider: VPC, IAM, EC2, S3, RDS, ECS."),
+            new RoleRequirement("CI/CD Pipelines", "CRITICAL", List.of("Git"), "Automated build, test, and deployment workflows (GitHub Actions)."),
+            new RoleRequirement("Git", "IMPORTANT", List.of(), "Infrastructure as Code versioning."),
+            new RoleRequirement("Terraform", "IMPORTANT", List.of("AWS"), "Declarative cloud infrastructure provisioning."),
+            new RoleRequirement("Python", "BENEFICIAL", List.of(), "Automation scripts and cloud infrastructure tooling.")
+        )),
+        Map.entry("Data & AI/ML Engineer", List.of(
+            new RoleRequirement("Python", "CRITICAL", List.of(), "Core language for scientific computing, modeling, and data pipelines."),
+            new RoleRequirement("SQL", "CRITICAL", List.of(), "Relational data extraction, window functions, and analytics."),
+            new RoleRequirement("Pandas & NumPy", "CRITICAL", List.of("Python"), "Data manipulation, cleansing, matrix operations, and feature engineering."),
+            new RoleRequirement("FastAPI", "CRITICAL", List.of("Python"), "Serving ML inference endpoints and data APIs at high concurrency."),
+            new RoleRequirement("Git", "IMPORTANT", List.of(), "Collaborative model tracking and code versioning."),
+            new RoleRequirement("PyTorch", "IMPORTANT", List.of("Python"), "Deep learning neural network modeling and fine-tuning."),
+            new RoleRequirement("Docker", "IMPORTANT", List.of(), "Containerizing data processing jobs and model endpoints."),
+            new RoleRequirement("LLMs & Prompt Engineering", "IMPORTANT", List.of("Python"), "Generative AI, retrieval-augmented generation (RAG), and embeddings.")
+        )),
+        Map.entry("Mobile Application Developer", List.of(
+            new RoleRequirement("Kotlin", "CRITICAL", List.of(), "Modern native mobile development language."),
+            new RoleRequirement("Android SDK", "CRITICAL", List.of("Kotlin"), "Activities, fragments, Jetpack Compose, viewmodels, and coroutines."),
+            new RoleRequirement("REST APIs", "CRITICAL", List.of(), "Network requests, JSON serialization, and offline caching."),
+            new RoleRequirement("Git", "IMPORTANT", List.of(), "Version control for mobile codebases."),
+            new RoleRequirement("Flutter", "BENEFICIAL", List.of(), "Cross-platform iOS and Android app development.")
+        )),
+        Map.entry("Software Engineer", List.of(
             new RoleRequirement("Java", "CRITICAL", List.of(), "Primary language for algorithmic implementation and systems."),
             new RoleRequirement("OOP", "CRITICAL", List.of("Java"), "Solid object-oriented design patterns and clean code principles."),
             new RoleRequirement("Data Structures", "CRITICAL", List.of("Java"), "Time and space complexity optimization for engineering problems."),
             new RoleRequirement("SQL", "IMPORTANT", List.of(), "Database querying and relational schema comprehension."),
             new RoleRequirement("Git", "IMPORTANT", List.of(), "Version control fundamentals."),
-            new RoleRequirement("Testing", "IMPORTANT", List.of(), "Automated test suites for code verification."),
+            new RoleRequirement("Testing", "IMPORTANT", List.of("Java"), "Automated test suites for code verification."),
             new RoleRequirement("Docker", "BENEFICIAL", List.of(), "Reproducible local dev setups.")
-        ),
-        "Spring Boot Developer", List.of(
+        )),
+        Map.entry("Spring Boot Developer", List.of(
             new RoleRequirement("Spring Boot", "CRITICAL", List.of("Java"), "Core framework expertise, auto-configuration, and starters."),
             new RoleRequirement("Java", "CRITICAL", List.of(), "Modern Java features (Streams, Records, Concurrency)."),
             new RoleRequirement("REST APIs", "CRITICAL", List.of("Spring Boot"), "RESTful service endpoints, validation, and error contracts."),
             new RoleRequirement("PostgreSQL", "IMPORTANT", List.of(), "Spring Data JPA repository mappings and persistence."),
             new RoleRequirement("Spring Security", "IMPORTANT", List.of("Spring Boot"), "Authentication filters and authorization guards."),
             new RoleRequirement("Docker", "IMPORTANT", List.of(), "Containerized Spring Boot deployments.")
-        )
+        ))
     );
 
     private record RoleRequirement(String name, String importance, List<String> prerequisites, String reason) {}

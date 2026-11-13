@@ -37,6 +37,14 @@ public class ResumeController {
         return ResponseEntity.ok(ApiResponse.ok(resumeService.analyzeResume(id, user)));
     }
 
+    @GetMapping("/latest")
+    @Operation(summary = "Get the latest analyzed resume for current user")
+    public ResponseEntity<ApiResponse<ResumeDtos.ResumeAnalysisResponse>> getLatestResume(
+            @AuthenticationPrincipal User user) {
+        ResumeDtos.ResumeAnalysisResponse res = resumeService.getLatestResumeAnalysis(user);
+        return ResponseEntity.ok(ApiResponse.ok("Latest resume retrieved", res));
+    }
+
     @PostMapping("/ai-rewrite-bullet")
     @Operation(summary = "Use Google Gemini AI to rewrite a weak resume bullet point into an impact statement")
     public ResponseEntity<ApiResponse<String>> rewriteBullet(@RequestBody java.util.Map<String, String> body) {

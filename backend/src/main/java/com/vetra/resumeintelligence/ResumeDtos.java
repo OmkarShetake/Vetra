@@ -42,6 +42,7 @@ public class ResumeDtos {
         String resumeId,
         String fileName,
         int overallScore,
+        String detectedRole,
         List<ResumeSubScore> subScores,
         List<ResumeSuggestionDto> recommendations,
         List<String> extractedSkills,

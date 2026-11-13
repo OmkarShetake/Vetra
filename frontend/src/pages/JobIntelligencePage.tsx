@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { apiClient } from '@/lib/api'
 import {
   Briefcase, Search, Plus, Building2, MapPin, Calendar,
   Sparkles, Trash2, ExternalLink, Filter, CheckCircle2,
@@ -32,60 +33,86 @@ const initialJobs: Job[] = [
     source: 'COMPANY_CAREER_PAGE',
     sourceUrl: 'https://example.com/careers/backend-java',
     collectedDate: '2025-01-20',
-    description: 'We are seeking an entry-level Java backend engineer to develop resilient RESTful microservices using Spring Boot and PostgreSQL. Experience with Docker, Git, and automated testing is highly desirable.',
+    description: 'Develop resilient RESTful microservices using Spring Boot and PostgreSQL. Experience with Docker, Git, and automated testing is highly desirable.',
     requiredSkills: ['Java', 'Spring Boot', 'REST APIs', 'SQL', 'Git'],
     preferredSkills: ['Docker', 'PostgreSQL', 'Redis', 'Kafka'],
-    responsibilities: [
-      'Design, develop, and maintain performant REST endpoints using Spring Boot',
-      'Collaborate on relational schema design and query optimization in PostgreSQL',
-      'Participate in peer code reviews and agile sprint planning'
-    ],
-    qualifications: ['Bachelor degree in Computer Science, IT, or equivalent experience', 'Strong foundation in Java OOP and Collections']
+    responsibilities: ['Design and maintain performant REST endpoints using Spring Boot', 'Collaborate on relational schema design in PostgreSQL'],
+    qualifications: ['B.Tech in CS/IT or equivalent experience', 'Strong foundation in Java OOP and Collections']
   },
   {
-    id: 'job-2',
-    title: 'Software Engineer - Platform & APIs',
-    company: 'FinEdge Technologies',
-    location: 'Remote',
-    experienceLevel: 'Entry-Level / Fresher',
+    id: 'job-fe-1',
+    title: 'Frontend React Developer',
+    company: 'Vercel Partner Labs',
+    location: 'Remote / Bengaluru',
+    experienceLevel: '0-2 years',
+    employmentType: 'Full-Time',
+    source: 'COMPANY_CAREER_PAGE',
+    sourceUrl: 'https://example.com/careers/frontend-react',
+    collectedDate: '2025-02-10',
+    description: 'Build fast, responsive interfaces using React 18, TypeScript, Tailwind CSS, and REST API consumption. Strong component design sense required.',
+    requiredSkills: ['React', 'TypeScript', 'JavaScript', 'Tailwind CSS', 'Git'],
+    preferredSkills: ['Next.js', 'Redux', 'REST APIs', 'HTML5 & CSS3'],
+    responsibilities: ['Build modular reusable UI components', 'Optimize web performance and client-side caching'],
+    qualifications: ['Proficiency with modern ES6+ and TypeScript', 'Experience building web applications in React']
+  },
+  {
+    id: 'job-fs-1',
+    title: 'Full Stack Software Engineer',
+    company: 'Stripe Systems Partner',
+    location: 'Remote / Hyderabad',
+    experienceLevel: '1-3 years',
     employmentType: 'Full-Time',
     source: 'PUBLIC_POSTING',
-    sourceUrl: 'https://example.com/careers/se-platform',
-    collectedDate: '2025-01-25',
-    description: 'Looking for enthusiastic software engineers passionate about clean architecture, transactional consistency, and API security. Work alongside senior architects building core banking payment flows.',
-    requiredSkills: ['Java', 'OOP', 'Spring Boot', 'PostgreSQL'],
-    preferredSkills: ['Spring Security', 'JUnit 5', 'Docker'],
-    responsibilities: [
-      'Implement idempotent webhooks and transaction processing pipelines',
-      'Write comprehensive unit and integration tests with Mockito',
-      'Build containerized microservices deployment manifests'
-    ],
-    qualifications: ['Hands-on project experience in Spring Boot backend development', 'Familiarity with Git branching and CI/CD']
+    sourceUrl: 'https://example.com/careers/fullstack-eng',
+    collectedDate: '2025-02-12',
+    description: 'Join our core platform team building end-to-end developer experiences. Strong knowledge of TypeScript, Node.js, React, PostgreSQL, and Docker containerization.',
+    requiredSkills: ['React', 'TypeScript', 'Node.js', 'PostgreSQL', 'Docker', 'Git'],
+    preferredSkills: ['Express.js', 'MongoDB', 'REST APIs', 'CI/CD Pipelines'],
+    responsibilities: ['Develop backend APIs and interactive frontend screens', 'Maintain database integrity and automated test suites'],
+    qualifications: ['Strong full-stack foundations with TypeScript and relational databases']
   },
   {
-    id: 'job-3',
-    title: 'Backend Associate Engineer',
-    company: 'DataStream Analytics',
-    location: 'Hyderabad, India',
-    experienceLevel: '0-2 Years',
+    id: 'job-do-1',
+    title: 'Associate Cloud & DevOps Engineer',
+    company: 'Cloudflare Partner Systems',
+    location: 'Remote / Pune',
+    experienceLevel: '0-2 years',
+    employmentType: 'Full-Time',
+    source: 'COMPANY_CAREER_PAGE',
+    sourceUrl: 'https://example.com/careers/devops-cloud',
+    collectedDate: '2025-02-08',
+    description: 'Manage automated CI/CD deployment pipelines with GitHub Actions, containerize microservices with Docker, and assist with Kubernetes and AWS infrastructure monitoring.',
+    requiredSkills: ['Linux', 'Docker', 'Kubernetes', 'AWS', 'CI/CD Pipelines', 'Git'],
+    preferredSkills: ['Terraform', 'Python', 'FastAPI'],
+    responsibilities: ['Implement declarative CI/CD build scripts', 'Manage container networking and infrastructure security'],
+    qualifications: ['Strong Linux command-line knowledge', 'Hands-on experience with Docker containerization']
+  },
+  {
+    id: 'job-ai-1',
+    title: 'Junior AI & Python Backend Developer',
+    company: 'Cohere Labs Partner',
+    location: 'Remote / Mumbai',
+    experienceLevel: '0-2 years',
     employmentType: 'Full-Time',
     source: 'USER_SUBMITTED',
-    collectedDate: '2025-02-01',
-    description: 'Join our telemetry team building high-throughput ingestion APIs. Solid knowledge of relational databases, caching with Redis, and message brokering with Kafka is a strong plus.',
-    requiredSkills: ['Java', 'REST APIs', 'SQL'],
-    preferredSkills: ['Redis', 'Kafka', 'Docker'],
-    responsibilities: [
-      'Scale ingest endpoints handling thousands of events per minute',
-      'Implement distributed caching layers for hot database reads'
-    ],
-    qualifications: ['B.Tech / MCA in CS / IT', 'Demonstrated personal or open-source projects']
+    collectedDate: '2025-02-14',
+    description: 'Develop high-performance REST APIs with FastAPI, integrate LLM embeddings, clean structured datasets with Pandas/SQL, and deploy scalable ML services with Docker.',
+    requiredSkills: ['Python', 'SQL', 'FastAPI', 'Pandas & NumPy', 'Docker', 'Git'],
+    preferredSkills: ['PyTorch', 'LLMs & Prompt Engineering', 'PostgreSQL'],
+    responsibilities: ['Construct asynchronous API endpoints with FastAPI', 'Build ETL scripts and LLM prompt pipelines'],
+    qualifications: ['Strong Python programming foundation', 'Demonstrated personal projects in AI/ML or API development']
   }
 ]
 
-// Known skills catalog for simple extraction
+// Multi-domain skills catalog for extraction
 const SKILL_KEYWORDS = [
   'Java', 'Spring Boot', 'Spring Security', 'REST APIs', 'SQL',
-  'PostgreSQL', 'Docker', 'Git', 'OOP', 'Redis', 'Kafka', 'JUnit', 'Hibernate', 'Microservices'
+  'PostgreSQL', 'Docker', 'Git', 'OOP', 'Redis', 'Kafka', 'JUnit', 'Hibernate', 'Microservices',
+  'React', 'TypeScript', 'JavaScript', 'HTML5 & CSS3', 'Tailwind CSS', 'Next.js',
+  'Node.js', 'Express.js', 'MongoDB', 'GraphQL',
+  'Linux', 'Kubernetes', 'AWS', 'CI/CD Pipelines', 'Terraform',
+  'Python', 'FastAPI', 'Pandas & NumPy', 'PyTorch', 'LLMs & Prompt Engineering',
+  'Kotlin', 'Android SDK', 'Flutter'
 ]
 
 // Demo user skills for comparison
@@ -97,6 +124,22 @@ export function JobIntelligencePage() {
   const [locationFilter, setLocationFilter] = useState('ALL')
   const [importOpen, setImportOpen] = useState(false)
   const [analyzingJob, setAnalyzingJob] = useState<Job | null>(null)
+  const [importing, setImporting] = useState(false)
+
+  useEffect(() => {
+    fetchJobs()
+  }, [])
+
+  const fetchJobs = async () => {
+    try {
+      const data = await apiClient.get<any[]>('/jobs')
+      if (Array.isArray(data) && data.length > 0) {
+        setJobsList(data)
+      }
+    } catch {
+      // Keep initialJobs fallback
+    }
+  }
 
   // Import form state
   const [title, setTitle] = useState('')
@@ -246,7 +289,7 @@ export function JobIntelligencePage() {
                       <MapPin className="h-3 w-3" />
                       {job.location}
                     </span>
-                    <span>•</span>
+                    <span>â€¢</span>
                     <span>{job.experienceLevel}</span>
                   </div>
 

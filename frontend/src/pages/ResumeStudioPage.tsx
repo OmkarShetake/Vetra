@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 import { apiClient } from '@/lib/api'
+import { useAuth } from '@/hooks/useAuth'
 
 interface SubScore {
   key: string
@@ -46,15 +47,40 @@ interface BulletExample {
 }
 
 const ROLE_TAXONOMY: Record<string, { title: string; required: string[]; preferred: string[] }> = {
-  'spring-boot': {
-    title: 'Spring Boot Specialist',
-    required: ['Spring Boot', 'Java', 'REST APIs', 'Spring Security', 'Hibernate / JPA', 'SQL'],
-    preferred: ['Docker', 'Microservices', 'Redis', 'Kafka', 'PostgreSQL', 'JUnit 5']
+  'frontend': {
+    title: 'Frontend Developer',
+    required: ['React', 'TypeScript', 'JavaScript', 'HTML5 & CSS3', 'Tailwind CSS', 'REST APIs'],
+    preferred: ['Next.js', 'Redux', 'Git', 'Vite', 'GraphQL']
+  },
+  'fullstack': {
+    title: 'Full Stack Developer',
+    required: ['React', 'TypeScript', 'Node.js', 'SQL', 'REST APIs', 'Git'],
+    preferred: ['PostgreSQL', 'Docker', 'Express.js', 'MongoDB', 'Next.js']
+  },
+  'devops': {
+    title: 'Cloud & DevOps Engineer',
+    required: ['Linux', 'Docker', 'Kubernetes', 'AWS', 'CI/CD Pipelines', 'Git'],
+    preferred: ['Terraform', 'Python', 'Prometheus', 'Bash', 'Microservices']
+  },
+  'data-ai': {
+    title: 'Data & AI/ML Engineer',
+    required: ['Python', 'SQL', 'Pandas & NumPy', 'FastAPI', 'Git'],
+    preferred: ['PyTorch', 'Docker', 'Machine Learning', 'LLMs & Prompt Engineering', 'TensorFlow']
+  },
+  'mobile': {
+    title: 'Mobile Application Developer',
+    required: ['Kotlin', 'Android SDK', 'REST APIs', 'Git'],
+    preferred: ['Flutter', 'Jetpack Compose', 'Coroutines', 'Firebase']
   },
   'java-backend': {
     title: 'Java Backend Developer',
     required: ['Java', 'OOP', 'Spring Boot', 'REST APIs', 'SQL', 'Git'],
     preferred: ['PostgreSQL', 'Docker', 'Maven', 'Redis', 'Collections']
+  },
+  'spring-boot': {
+    title: 'Spring Boot Specialist',
+    required: ['Spring Boot', 'Java', 'REST APIs', 'Spring Security', 'Hibernate / JPA', 'SQL'],
+    preferred: ['Docker', 'Microservices', 'Redis', 'Kafka', 'PostgreSQL', 'JUnit 5']
   },
   'software-engineer': {
     title: 'Software Engineer',
@@ -66,6 +92,7 @@ const ROLE_TAXONOMY: Record<string, { title: string; required: string[]; preferr
 const DEFAULT_EXTRACTED_SKILLS = ['Java', 'OOP', 'Spring Boot', 'REST APIs', 'SQL', 'Git', 'PostgreSQL', 'Collections']
 
 export function ResumeStudioPage() {
+  const { user, refreshUser } = useAuth()
   const [analyzing, setAnalyzing] = useState(false)
   const [analysisStep, setAnalysisStep] = useState<string>('')
   const [fileName, setFileName] = useState<string>('Omkar_Shetake_CV_EPAM.pdf')
@@ -75,6 +102,31 @@ export function ResumeStudioPage() {
   const [activeTab, setActiveTab] = useState<string>('alignment')
   const [dragging, setDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    loadLatestResume()
+  }, [])
+
+  const loadLatestResume = async () => {
+    try {
+      const res = await apiClient.get<any>('/resumes/latest')
+      if (res) {
+        if (res.fileName) setFileName(res.fileName)
+        if (res.overallScore) setOverallScore(res.overallScore)
+        if (res.extractedSkills?.length) setExtractedSkills(res.extractedSkills)
+        if (res.subScores?.length) setSubScores(res.subScores)
+        if (res.detectedRole) {
+          const roleKey = Object.keys(ROLE_TAXONOMY).find(k =>
+            ROLE_TAXONOMY[k].title.toLowerCase() === res.detectedRole.toLowerCase() ||
+            res.detectedRole.toLowerCase().includes(ROLE_TAXONOMY[k].title.toLowerCase())
+          )
+          if (roleKey) setSelectedRole(roleKey)
+        }
+      }
+    } catch {
+      // Keep defaults
+    }
+  }
 
   // Live Gemini AI Bullet Rewriter states
   const [customBullet, setCustomBullet] = useState<string>('')
@@ -239,7 +291,15 @@ export function ResumeStudioPage() {
           if (analysisRes.extractedSkills?.length) serverExtractedSkills = analysisRes.extractedSkills
           if (analysisRes.subScores?.length) serverSubScores = analysisRes.subScores
           if (analysisRes.overallScore) serverOverallScore = analysisRes.overallScore
+          if (analysisRes.detectedRole) {
+            const roleKey = Object.keys(ROLE_TAXONOMY).find(k =>
+              ROLE_TAXONOMY[k].title.toLowerCase() === analysisRes.detectedRole.toLowerCase() ||
+              analysisRes.detectedRole.toLowerCase().includes(ROLE_TAXONOMY[k].title.toLowerCase())
+            )
+            if (roleKey) setSelectedRole(roleKey)
+          }
         }
+        await refreshUser()
       }
     } catch {
       // Backend offline: use graceful client-side text extractor
@@ -379,7 +439,7 @@ export function ResumeStudioPage() {
               <Badge variant="muted" className="font-mono text-xs font-normal">
                 {fileName}
               </Badge>
-              <span>•</span>
+              <span>Ã¢â‚¬Â¢</span>
               <span>Last Analyzed: {uploadedDate}</span>
             </div>
           </div>
@@ -759,7 +819,7 @@ export function ResumeStudioPage() {
                 <div className="space-y-2">
                   {aiResult.options.map((opt, optIndex) => (
                     <div key={optIndex} className="rounded-lg border border-teal/30 bg-teal/5 p-3 text-xs font-medium text-foreground leading-relaxed flex items-start justify-between gap-3">
-                      <span>• {opt}</span>
+                      <span>Ã¢â‚¬Â¢ {opt}</span>
                       <Button
                         variant="ghost"
                         size="iconSm"
@@ -777,7 +837,7 @@ export function ResumeStudioPage() {
                 </div>
 
                 <p className="text-[11px] text-muted-foreground italic">
-                  💡 {aiResult.explanation}
+                  Ã°Å¸â€™Â¡ {aiResult.explanation}
                 </p>
               </div>
             )}

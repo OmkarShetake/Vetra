@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { apiClient } from '@/lib/api'
 import { Github } from '@/components/ui/github-icon'
 import {
   ShieldCheck, Plus, Code2, Database, Server, GitBranch,
@@ -69,6 +70,51 @@ export function MySkillsPage() {
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('ALL')
   const [addDialogOpen, setAddDialogOpen] = useState(false)
+
+  useEffect(() => {
+    fetchUserSkills()
+  }, [])
+
+  const fetchUserSkills = async () => {
+    try {
+      const [evidenceRes, skillsRes] = await Promise.allSettled([
+        apiClient.get<any[]>('/evidence'),
+        apiClient.get<any[]>('/skills'),
+      ])
+
+      const evidenceItems = evidenceRes.status === 'fulfilled' && Array.isArray(evidenceRes.value) ? evidenceRes.value : []
+      const taxonomySkills = skillsRes.status === 'fulfilled' && Array.isArray(skillsRes.value) ? skillsRes.value : []
+
+      const skillEvidenceMap: Record<string, { count: number; verified: boolean }> = {}
+      evidenceItems.forEach(item => {
+        (item.linkedSkills || []).forEach((s: string) => {
+          if (!skillEvidenceMap[s]) {
+            skillEvidenceMap[s] = { count: 1, verified: item.verified }
+          } else {
+            skillEvidenceMap[s].count += 1
+            if (item.verified) skillEvidenceMap[s].verified = true
+          }
+        })
+      })
+
+      if (Object.keys(skillEvidenceMap).length > 0) {
+        const dynamicList: SkillItem[] = Object.entries(skillEvidenceMap).map(([name, data], idx) => {
+          const matchTax = taxonomySkills.find((t: any) => t.name.toLowerCase() === name.toLowerCase())
+          return {
+            id: `user-skill-${idx}`,
+            name,
+            category: matchTax ? matchTax.category : 'FRAMEWORK',
+            evidenceStatus: data.verified ? 'ASSESSMENT_VERIFIED' : 'EVIDENCE_SUBMITTED',
+            evidenceCount: data.count,
+            selfRatedLevel: Math.min(10, Math.max(5, 5 + data.count))
+          }
+        })
+        setSkillsList(dynamicList)
+      }
+    } catch {
+      // fallback
+    }
+  }
 
   // Form states
   const [newSkillName, setNewSkillName] = useState('')

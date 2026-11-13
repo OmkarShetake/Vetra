@@ -14,7 +14,7 @@ public class JobService {
 
     private final JobRepository jobRepository;
 
-    private static final Map<String, List<String>> TAXONOMY_SKILLS = Map.ofEntries(
+        private static final Map<String, List<String>> TAXONOMY_SKILLS = Map.ofEntries(
         Map.entry("Java", List.of("java", "jvm", "jdk", "core java")),
         Map.entry("Spring Boot", List.of("spring boot", "springboot", "spring-boot", "spring framework")),
         Map.entry("REST APIs", List.of("rest", "restful", "rest api", "rest apis", "web services")),
@@ -26,7 +26,26 @@ public class JobService {
         Map.entry("Redis", List.of("redis", "caching", "in-memory")),
         Map.entry("Kafka", List.of("kafka", "message broker", "event streaming")),
         Map.entry("Testing", List.of("junit", "mockito", "unit test", "unit testing", "integration testing")),
-        Map.entry("Microservices", List.of("microservices", "microservice architecture", "distributed systems"))
+        Map.entry("Microservices", List.of("microservices", "microservice architecture", "distributed systems")),
+        Map.entry("React", List.of("react", "react.js", "reactjs", "react native")),
+        Map.entry("TypeScript", List.of("typescript", "ts")),
+        Map.entry("JavaScript", List.of("javascript", "js", "es6")),
+        Map.entry("Tailwind CSS", List.of("tailwind", "tailwindcss")),
+        Map.entry("Next.js", List.of("next.js", "nextjs")),
+        Map.entry("Node.js", List.of("node", "nodejs", "node.js")),
+        Map.entry("Express.js", List.of("express", "expressjs", "express.js")),
+        Map.entry("MongoDB", List.of("mongodb", "mongo", "nosql")),
+        Map.entry("Python", List.of("python", "python3")),
+        Map.entry("FastAPI", List.of("fastapi", "flask")),
+        Map.entry("Pandas & NumPy", List.of("pandas", "numpy", "data analysis")),
+        Map.entry("PyTorch", List.of("pytorch", "torch", "tensorflow")),
+        Map.entry("Kubernetes", List.of("kubernetes", "k8s")),
+        Map.entry("AWS", List.of("aws", "amazon web services", "ec2", "s3")),
+        Map.entry("Linux", List.of("linux", "unix", "bash", "shell")),
+        Map.entry("CI/CD Pipelines", List.of("ci/cd", "github actions", "jenkins", "gitlab")),
+        Map.entry("Kotlin", List.of("kotlin")),
+        Map.entry("Android SDK", List.of("android", "android sdk", "jetpack compose")),
+        Map.entry("Flutter", List.of("flutter", "dart"))
     );
 
     public JobService(JobRepository jobRepository) {
