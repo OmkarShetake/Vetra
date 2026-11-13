@@ -111,7 +111,7 @@ public class SkillGapService {
 
         List<RoleRequirement> requirements = ROLE_TAXONOMY.getOrDefault(role, ROLE_TAXONOMY.get("Java Backend Developer"));
 
-        // Build dynamic user evidence set from database
+        // Build dynamic user evidence set from database and request skills
         Set<String> verifiedSkills = new HashSet<>();
         Set<String> partialSkills = new HashSet<>();
         Map<String, Integer> evidenceCountMap = new HashMap<>();
@@ -121,21 +121,30 @@ public class SkillGapService {
             for (EvidenceItem item : userEvidence) {
                 if (item.getLinkedSkills() != null) {
                     for (String s : item.getLinkedSkills()) {
-                        evidenceCountMap.put(s, evidenceCountMap.getOrDefault(s, 0) + 1);
+                        evidenceCountMap.put(s.toLowerCase(), evidenceCountMap.getOrDefault(s.toLowerCase(), 0) + 1);
                         if (item.isVerified()) {
-                            verifiedSkills.add(s);
+                            verifiedSkills.add(s.toLowerCase());
                         } else {
-                            partialSkills.add(s);
+                            partialSkills.add(s.toLowerCase());
                         }
                     }
                 }
             }
         }
 
-        // Default baseline if user has no items yet
+        // Incorporate currentSkills explicitly passed in the request (e.g. from parsed resume)
+        if (req.currentSkills() != null && !req.currentSkills().isEmpty()) {
+            for (String s : req.currentSkills()) {
+                String lower = s.toLowerCase();
+                evidenceCountMap.put(lower, evidenceCountMap.getOrDefault(lower, 0) + 1);
+                verifiedSkills.add(lower);
+            }
+        }
+
+        // Default baseline only if completely empty
         if (verifiedSkills.isEmpty() && partialSkills.isEmpty()) {
-            verifiedSkills.addAll(Set.of("Java", "OOP", "SQL", "Git"));
-            partialSkills.addAll(Set.of("REST APIs"));
+            verifiedSkills.addAll(Set.of("java", "oop", "sql", "git"));
+            partialSkills.addAll(Set.of("rest apis"));
         }
 
         List<SkillGapDtos.SkillGapItem> items = new ArrayList<>();
@@ -148,9 +157,12 @@ public class SkillGapService {
         for (RoleRequirement reqItem : requirements) {
             int weight = reqItem.importance.equals("CRITICAL") ? 3 : reqItem.importance.equals("IMPORTANT") ? 2 : 1;
             totalWeight += weight;
-            int count = evidenceCountMap.getOrDefault(reqItem.name, verifiedSkills.contains(reqItem.name) ? 2 : partialSkills.contains(reqItem.name) ? 1 : 0);
+            String reqLower = reqItem.name.toLowerCase();
+            boolean isVerified = verifiedSkills.contains(reqLower) || verifiedSkills.stream().anyMatch(v -> v.contains(reqLower) || reqLower.contains(v));
+            boolean isPartial = !isVerified && (partialSkills.contains(reqLower) || partialSkills.stream().anyMatch(p -> p.contains(reqLower) || reqLower.contains(p)));
+            int count = evidenceCountMap.getOrDefault(reqLower, isVerified ? 2 : isPartial ? 1 : 0);
 
-            if (verifiedSkills.contains(reqItem.name)) {
+            if (isVerified) {
                 demonstrated++;
                 scoreWeightedSum += weight * 100;
                 items.add(new SkillGapDtos.SkillGapItem(
@@ -162,7 +174,7 @@ public class SkillGapService {
                     reqItem.reason,
                     reqItem.prerequisites
                 ));
-            } else if (partialSkills.contains(reqItem.name)) {
+            } else if (isPartial) {
                 partial++;
                 scoreWeightedSum += (int) (weight * 50);
                 items.add(new SkillGapDtos.SkillGapItem(

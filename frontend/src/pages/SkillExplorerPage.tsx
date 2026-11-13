@@ -11,6 +11,8 @@ import {
   TrendingUp,
   Layers,
   MousePointerClick,
+  CheckCircle2,
+  AlertTriangle,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -268,7 +270,7 @@ const skillNodes: SkillNode[] = [
       'Containerization platform for packaging, shipping, and running applications consistently across environments.',
     prerequisites: [],
     relatedSkills: ['Spring Boot', 'Kafka', 'Git'],
-    roleRelevance: ['Java Backend Developer', 'Spring Boot Developer', 'Software Engineer'],
+    roleRelevance: ['Java Backend Developer', 'Spring Boot Developer', 'Software Engineer', 'Cloud & DevOps'],
     demandLevel: 70,
   },
   {
@@ -280,8 +282,8 @@ const skillNodes: SkillNode[] = [
     description:
       'Distributed version control system: branching, merging, rebasing, and collaborative workflows.',
     prerequisites: [],
-    relatedSkills: ['Docker', 'Java'],
-    roleRelevance: ['Java Backend Developer', 'Software Engineer', 'Spring Boot Developer'],
+    relatedSkills: ['Docker', 'Java', 'React'],
+    roleRelevance: ['Java Backend Developer', 'Software Engineer', 'Frontend Developer', 'Cloud & DevOps'],
     demandLevel: 95,
   },
   {
@@ -296,6 +298,55 @@ const skillNodes: SkillNode[] = [
     relatedSkills: ['Java', 'Spring Boot', 'Git'],
     roleRelevance: ['Java Backend Developer', 'Software Engineer'],
     demandLevel: 82,
+  },
+  // Multi-Track Additions
+  {
+    id: 'react',
+    label: 'React',
+    category: 'FRAMEWORK',
+    x: 430,
+    y: 40,
+    description: 'Component-based UI library for modern web applications: hooks, virtual DOM, and component composition.',
+    prerequisites: ['javascript'],
+    relatedSkills: ['TypeScript', 'Next.js', 'Tailwind CSS', 'REST APIs'],
+    roleRelevance: ['Frontend Developer', 'Full Stack Developer'],
+    demandLevel: 94,
+  },
+  {
+    id: 'typescript',
+    label: 'TypeScript',
+    category: 'LANGUAGE',
+    x: 280,
+    y: 40,
+    description: 'Typed superset of JavaScript providing static types, interfaces, generics, and compiler safety.',
+    prerequisites: [],
+    relatedSkills: ['React', 'Next.js', 'REST APIs'],
+    roleRelevance: ['Frontend Developer', 'Full Stack Developer'],
+    demandLevel: 91,
+  },
+  {
+    id: 'kubernetes',
+    label: 'Kubernetes',
+    category: 'PLATFORM',
+    x: 700,
+    y: 570,
+    description: 'Container orchestration platform for automating deployment, scaling, and operations of application containers.',
+    prerequisites: ['docker'],
+    relatedSkills: ['Docker', 'AWS', 'CI/CD Pipelines'],
+    roleRelevance: ['Cloud / DevOps Engineer', 'Software Engineer'],
+    demandLevel: 86,
+  },
+  {
+    id: 'python',
+    label: 'Python',
+    category: 'LANGUAGE',
+    x: 560,
+    y: 40,
+    description: 'General-purpose programming language dominant in AI/ML, data engineering, automation, and backend APIs.',
+    prerequisites: [],
+    relatedSkills: ['FastAPI', 'Pandas', 'SQL'],
+    roleRelevance: ['AI / Machine Learning Engineer', 'Data Engineer'],
+    demandLevel: 93,
   },
 ]
 
@@ -321,6 +372,11 @@ const skillEdges: SkillEdge[] = [
   { source: 'docker', target: 'spring-boot', type: 'RELATED' },
   { source: 'git', target: 'java', type: 'RELATED' },
   { source: 'testing', target: 'spring-boot', type: 'RELATED' },
+  // Multi-track edges
+  { source: 'typescript', target: 'react', type: 'PREREQUISITE' },
+  { source: 'react', target: 'rest-apis', type: 'RELATED' },
+  { source: 'docker', target: 'kubernetes', type: 'PREREQUISITE' },
+  { source: 'python', target: 'sql', type: 'RELATED' },
 ]
 
 const VIEWBOX_W = 900
@@ -338,6 +394,20 @@ export function SkillExplorerPage() {
   const [scale, setScale] = useState(1)
   const [tx, setTx] = useState(0)
   const [ty, setTy] = useState(0)
+  const [highlightMySkills, setHighlightMySkills] = useState(true)
+
+  const candidateSkills = useMemo(() => {
+    try {
+      const raw = localStorage.getItem('vetra_latest_resume_analysis')
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        if (Array.isArray(parsed?.extractedSkills)) {
+          return new Set(parsed.extractedSkills.map((s: string) => s.toLowerCase()))
+        }
+      }
+    } catch {}
+    return new Set(['java', 'spring boot', 'rest apis', 'sql', 'git', 'postgresql', 'docker', 'oop'])
+  }, [])
 
   const svgRef = useRef<SVGSVGElement>(null)
   const dragState = useRef<{
@@ -455,10 +525,20 @@ export function SkillExplorerPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <Badge variant="amber" className="w-fit gap-1">
-          <Layers className="h-3 w-3" />
-          Demo Data
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Button
+            variant={highlightMySkills ? "teal" : "outline"}
+            size="sm"
+            onClick={() => setHighlightMySkills(h => !h)}
+            className="gap-1.5 text-xs font-semibold shadow-xs"
+          >
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            {highlightMySkills ? "My Verified Skills: ON" : "Overlay My Skills"}
+          </Button>
+          <Badge variant="outline" className="border-indigo/30 bg-indigo/10 text-indigo text-xs">
+            Interactive DAG
+          </Badge>
+        </div>
       </div>
 
       {/* Graph + Detail Panel */}
@@ -543,6 +623,7 @@ export function SkillExplorerPage() {
                     const color = CATEGORY_COLORS[node.category]
                     const isMatched = matchedNodeIds.has(node.id)
                     const isSelected = selectedNodeId === node.id
+                    const isDemonstrated = candidateSkills.has(node.label.toLowerCase()) || candidateSkills.has(node.id.toLowerCase())
                     const dimmed = isSearching && !isMatched
                     const r = isSelected ? 26 : 22
 
@@ -554,9 +635,13 @@ export function SkillExplorerPage() {
                         className="cursor-pointer"
                         style={{ opacity: dimmed ? 0.25 : 1, transition: 'opacity 200ms' }}
                       >
+                        {/* Candidate verified skills glow */}
+                        {highlightMySkills && isDemonstrated && (
+                          <circle r={r + 6} fill="none" stroke="#10B981" strokeWidth={2.5} opacity={0.85} strokeDasharray={isSelected ? undefined : "4 2"} />
+                        )}
                         {/* Selection ring */}
                         {isSelected && (
-                          <circle r={r + 6} fill="none" stroke={color} strokeWidth={2} opacity={0.5} />
+                          <circle r={r + 9} fill="none" stroke={color} strokeWidth={2} opacity={0.5} />
                         )}
                         {/* Glow for matched search */}
                         {isSearching && isMatched && (
@@ -564,13 +649,22 @@ export function SkillExplorerPage() {
                         )}
                         <circle r={r} fill={color} opacity={0.92} />
                         <circle r={r} fill="none" stroke="#FFFFFF" strokeWidth={2} opacity={0.6} />
+
+                        {/* Demonstrated check badge */}
+                        {highlightMySkills && isDemonstrated && (
+                          <g transform={`translate(${r - 3}, ${-r + 3})`}>
+                            <circle r={6} fill="#10B981" stroke="#FFFFFF" strokeWidth={1.5} />
+                            <text y={3} textAnchor="middle" fontSize={8} fontWeight="bold" fill="#FFFFFF">✓</text>
+                          </g>
+                        )}
+
                         <text
                           y={r + 14}
                           textAnchor="middle"
                           fontSize={13}
                           fontWeight={600}
-                          fill="#202939"
-                          className="pointer-events-none"
+                          fill="currentColor"
+                          className="pointer-events-none fill-foreground"
                         >
                           {node.label}
                         </text>
@@ -607,16 +701,27 @@ export function SkillExplorerPage() {
                     </div>
                     <div>
                       <CardTitle className="text-base">{selectedNode.label}</CardTitle>
-                      <Badge
-                        variant="outline"
-                        className="mt-1"
-                        style={{
-                          color: CATEGORY_COLORS[selectedNode.category],
-                          borderColor: `${CATEGORY_COLORS[selectedNode.category]}40`,
-                        }}
-                      >
-                        {CATEGORY_LABELS[selectedNode.category]}
-                      </Badge>
+                      <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                        <Badge
+                          variant="outline"
+                          style={{
+                            color: CATEGORY_COLORS[selectedNode.category],
+                            borderColor: `${CATEGORY_COLORS[selectedNode.category]}40`,
+                          }}
+                        >
+                          {CATEGORY_LABELS[selectedNode.category]}
+                        </Badge>
+
+                        {candidateSkills.has(selectedNode.label.toLowerCase()) || candidateSkills.has(selectedNode.id.toLowerCase()) ? (
+                          <Badge variant="teal" className="gap-1 text-[11px]">
+                            <CheckCircle2 className="h-3 w-3" /> In Your Resume
+                          </Badge>
+                        ) : (
+                          <Badge variant="amber" className="gap-1 text-[11px]">
+                            <AlertTriangle className="h-3 w-3" /> Skill Gap
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <Button
