@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import {
   Target,
   Play,
@@ -451,7 +451,7 @@ export function SkillGapAnalysisPage() {
                 <SelectValue placeholder="Select a target role" />
               </SelectTrigger>
               <SelectContent>
-                {availableRoles.map((role) => (
+                {availableRoles.map((role: string) => (
                   <SelectItem key={role} value={role}>
                     {role}
                   </SelectItem>
